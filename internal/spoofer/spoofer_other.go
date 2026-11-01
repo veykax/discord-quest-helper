@@ -10,7 +10,7 @@ func newPlatformManager() Manager {
 	return &fallbackManager{}
 }
 
-func (m *fallbackManager) Start(exeName, windowTitle, steamFolder, steamAppID string) error {
+func (m *fallbackManager) Start(exeName, windowTitle, steamFolder, steamAppID, discordAppID string) error {
 	return errors.New("platform not supported")
 }
 

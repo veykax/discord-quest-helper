@@ -356,6 +356,7 @@ async function startGame() {
         windowTitle: selectedGame.windowTitle || selectedGame.title,
         steamFolder: selectedGame.steamFolder || "",
         steamAppId: selectedGame.steamAppId || "",
+        discordAppId: selectedGame.discordAppId || "",
       }),
     });
 

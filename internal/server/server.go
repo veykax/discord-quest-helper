@@ -73,12 +73,13 @@ func (s *AppServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type StartRequest struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	ExeName     string `json:"exe"`
-	WindowTitle string `json:"windowTitle"`
-	SteamFolder string `json:"steamFolder"`
-	SteamAppID  string `json:"steamAppId"`
+	ID           string `json:"id"`
+	Title        string `json:"title"`
+	ExeName      string `json:"exe"`
+	WindowTitle  string `json:"windowTitle"`
+	SteamFolder  string `json:"steamFolder"`
+	SteamAppID   string `json:"steamAppId"`
+	DiscordAppID string `json:"discordAppId"`
 }
 
 func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +99,7 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 		wTitle = req.Title
 	}
 
-	if err := s.spoofer.Start(req.ExeName, wTitle, req.SteamFolder, req.SteamAppID); err != nil {
+	if err := s.spoofer.Start(req.ExeName, wTitle, req.SteamFolder, req.SteamAppID, req.DiscordAppID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

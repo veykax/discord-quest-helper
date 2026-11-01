@@ -105,7 +105,7 @@ namespace DiscordGameStub {
 	return fmt.Errorf("failed to build or copy stub")
 }
 
-func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder string, steamAppID string) error {
+func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder string, steamAppID string, discordAppID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

@@ -14,9 +14,11 @@ import (
 	"syscall"
 	"time"
 
+	"discord-quest-helper/internal/config"
 	"discord-quest-helper/internal/screen"
 	"discord-quest-helper/internal/server"
 	"discord-quest-helper/internal/spoofer"
+	"discord-quest-helper/internal/stub"
 )
 
 //go:embed web/*
@@ -43,16 +45,20 @@ func main() {
 	mux := http.NewServeMux()
 	appServer.RegisterRoutes(mux)
 
-	// Находим свободный порт на localhost
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	// Пробуем порт по умолчанию или свободный порт на localhost
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", config.DefaultPort))
 	if err != nil {
-		fmt.Printf("Error starting listener: %v\n", err)
-		os.Exit(1)
+		listener, err = net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			fmt.Printf("Error starting listener: %v\n", err)
+			os.Exit(1)
+		}
 	}
 	defer listener.Close()
 
 	port := listener.Addr().(*net.TCPAddr).Port
 	url := fmt.Sprintf("http://127.0.0.1:%d", port)
+	fmt.Printf("Discord Quest Helper running at %s\n", url)
 
 	// Запуск HTTP сервера в фоне
 	srv := &http.Server{Handler: mux}
@@ -83,9 +89,11 @@ func main() {
 }
 
 func runStubMode() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	<-sigChan
+	title := "Game"
+	if len(os.Args) > 2 {
+		title = os.Args[2]
+	}
+	stub.Run(title)
 }
 
 func launchNativeAppWindow(url string, exitChan chan struct{}) {
@@ -148,7 +156,8 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 		}
 		profileDir := filepath.Join(os.TempDir(), "DiscordQuestHelper_AppProfile")
 		appArg := fmt.Sprintf("--app=%s", url)
-		sizeArg := fmt.Sprintf("--window-size=%s,%s", width, height)
+		sizeArg := fmt.Sprintf("--window-size=%d,%d", width, height)
+		posArg := fmt.Sprintf("--window-position=%d,%d", posX, posY)
 		profileArg := fmt.Sprintf("--user-data-dir=%s", profileDir)
 
 		for _, b := range browsers {
@@ -156,6 +165,7 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 				cmd := exec.Command(p,
 					appArg,
 					sizeArg,
+					posArg,
 					profileArg,
 					"--no-first-run",
 					"--no-default-browser-check",
@@ -169,14 +179,55 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 				)
 				if err := cmd.Start(); err == nil {
 					go func() {
+						startTime := time.Now()
 						_ = cmd.Wait()
-						select {
-						case <-exitChan:
-						default:
-							close(exitChan)
+						if time.Since(startTime) > 3*time.Second {
+							select {
+							case <-exitChan:
+							default:
+								close(exitChan)
+							}
 						}
 					}()
 					return
+				}
+			}
+		}
+
+		// Try flatpak browser if native binary not in PATH
+		if _, err := exec.LookPath("flatpak"); err == nil {
+			flatpakBrowsers := []string{
+				"com.vivaldi.Vivaldi",
+				"com.google.Chrome",
+				"org.chromium.Chromium",
+				"com.brave.Browser",
+				"com.microsoft.Edge",
+			}
+			for _, fb := range flatpakBrowsers {
+				if err := exec.Command("flatpak", "info", fb).Run(); err == nil {
+					cmd := exec.Command("flatpak", "run", fb,
+						appArg,
+						sizeArg,
+						posArg,
+						profileArg,
+						"--no-first-run",
+						"--no-default-browser-check",
+						"--disable-extensions",
+					)
+					if err := cmd.Start(); err == nil {
+						go func() {
+							startTime := time.Now()
+							_ = cmd.Wait()
+							if time.Since(startTime) > 3*time.Second {
+								select {
+								case <-exitChan:
+								default:
+									close(exitChan)
+								}
+							}
+						}()
+						return
+					}
 				}
 			}
 		}
