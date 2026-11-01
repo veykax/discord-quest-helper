@@ -88,8 +88,9 @@ func runStubMode() {
 }
 
 func launchNativeAppWindow(url string, exitChan chan struct{}) {
-	width := "960"
-	height := "680"
+	width := 960
+	height := 680
+	posX, posY := getScreenCenter(width, height)
 
 	switch runtime.GOOS {
 	case "windows":
@@ -97,12 +98,14 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 		if browserPath != "" {
 			profileDir := filepath.Join(os.TempDir(), "DiscordQuestHelper_AppProfile")
 			appArg := fmt.Sprintf("--app=%s", url)
-			sizeArg := fmt.Sprintf("--window-size=%s,%s", width, height)
+			sizeArg := fmt.Sprintf("--window-size=%d,%d", width, height)
+			posArg := fmt.Sprintf("--window-position=%d,%d", posX, posY)
 			profileArg := fmt.Sprintf("--user-data-dir=%s", profileDir)
 
 			cmd := exec.Command(browserPath,
 				appArg,
 				sizeArg,
+				posArg,
 				profileArg,
 				"--no-first-run",
 				"--no-default-browser-check",

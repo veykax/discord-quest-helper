@@ -24,10 +24,12 @@
   --border-light: #3f4248;
 }
 
-body {
+html, body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   height: 100vh;
+  min-width: 820px;
+  min-height: 560px;
   overflow: hidden;
 }
 
@@ -35,9 +37,12 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-width: 820px;
+  min-height: 560px;
   padding: 16px 20px 20px 20px;
   gap: 14px;
   position: relative;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -592,6 +597,26 @@ body {
 
 .info-text strong {
   color: var(--text-secondary);
+}
+
+.discord-link-row {
+  margin-top: 5px;
+}
+
+.discord-open-link {
+  color: #7983f5;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+}
+
+.discord-open-link:hover {
+  color: #949cf7;
+  text-decoration: underline;
 }
 
 /* Toast Notification */

@@ -57,10 +57,39 @@ function updateSoundUI() {
   }
 }
 
+// Ограничение минимального размера окна
+const MIN_WINDOW_WIDTH = 840;
+const MIN_WINDOW_HEIGHT = 580;
+
+window.addEventListener("resize", () => {
+  if (window.outerWidth < MIN_WINDOW_WIDTH || window.outerHeight < MIN_WINDOW_HEIGHT) {
+    const targetW = Math.max(window.outerWidth, MIN_WINDOW_WIDTH);
+    const targetH = Math.max(window.outerHeight, MIN_WINDOW_HEIGHT);
+    window.resizeTo(targetW, targetH);
+  }
+});
+
+function loadCustomGames() {
+  try {
+    const raw = localStorage.getItem("dqh_custom_games");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCustomGames(games) {
+  try {
+    localStorage.setItem("dqh_custom_games", JSON.stringify(games));
+  } catch (e) {}
+}
+
 async function fetchGames() {
   try {
     const res = await fetch("/api/games");
-    allGames = await res.json();
+    const serverGames = await res.json();
+    const savedCustom = loadCustomGames();
+    allGames = [...serverGames, ...savedCustom];
     gamesCountEl.textContent = allGames.length;
     renderGames(allGames);
     if (allGames.length > 0) {
@@ -133,14 +162,34 @@ function setupEventListeners() {
     }
     const cleanExe = exe.toLowerCase().endsWith(".exe") ? exe : `${exe}.exe`;
     const custom = {
-      id: "custom",
+      id: "custom_" + Date.now(),
       title: title,
       desc: "Пользовательский процесс",
       exe: cleanExe,
       windowTitle: title,
       badge: "Custom",
     };
+    
+    // Сохраняем в localStorage, чтобы игра не исчезала после перезапуска
+    const saved = loadCustomGames();
+    saved.push(custom);
+    saveCustomGames(saved);
+
+    allGames.push(custom);
+    gamesCountEl.textContent = allGames.length;
+    renderGames(allGames);
     selectGame(custom);
+    customExeInput.value = "";
+    customTitleInput.value = "";
+    showToast("Процесс сохранён", `Процесс ${cleanExe} добавлен в ваш список`);
+  });
+
+  // Быстрый поиск по нажатию клавиши '/'
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== searchInput && document.activeElement !== customExeInput && document.activeElement !== customTitleInput) {
+      e.preventDefault();
+      searchInput.focus();
+    }
   });
 
   // Buttons
