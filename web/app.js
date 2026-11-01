@@ -201,10 +201,20 @@ function setupEventListeners() {
     toastEl.classList.add("hidden");
   });
 
-  // Close sync with backend
-  window.addEventListener("beforeunload", () => {
-    navigator.sendBeacon("/api/exit");
-  });
+  // Открыть Discord через локальный бэкенд (без браузерной навигации)
+  const openDiscord = async () => {
+    try {
+      await fetch("/api/open-discord", { method: "POST" });
+    } catch (e) {
+      console.error("Open discord error:", e);
+    }
+  };
+
+  const openDiscordBtn = document.getElementById("openDiscordBtn");
+  if (openDiscordBtn) openDiscordBtn.addEventListener("click", openDiscord);
+
+  const headerDiscordBtn = document.getElementById("headerDiscordBtn");
+  if (headerDiscordBtn) headerDiscordBtn.addEventListener("click", openDiscord);
 }
 
 async function startGame() {

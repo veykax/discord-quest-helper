@@ -27,7 +27,7 @@ func newPlatformManager() Manager {
 	os.MkdirAll(tDir, 0755)
 	return &windowsManager{
 		tempDir:  tDir,
-		baseStub: filepath.Join(tDir, "stub_base.exe"),
+		baseStub: filepath.Join(tDir, "stub_base_v2.exe"),
 	}
 }
 
@@ -36,7 +36,7 @@ func (m *windowsManager) ensureStub() error {
 		return nil
 	}
 
-	// Исходник C# заглушки с видимым окном
+	// Исходник C# заглушки с видимым окном, запускающимся сразу свёрнутым
 	csSource := `using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -52,7 +52,8 @@ namespace DiscordGameStub {
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedSingle,
                 MaximizeBox = false,
-                ShowInTaskbar = true
+                ShowInTaskbar = true,
+                WindowState = FormWindowState.Minimized
             };
             Label lbl = new Label {
                 Text = title + "\n\n(Эмуляция для квеста Discord)",

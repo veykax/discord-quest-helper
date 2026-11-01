@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/fs"
 	"net/http"
+	"os/exec"
+	"runtime"
 	"sync"
 	"time"
 
@@ -38,6 +40,7 @@ func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/start", s.handleStart)
 	mux.HandleFunc("/api/stop", s.handleStop)
 	mux.HandleFunc("/api/exit", s.handleExit)
+	mux.HandleFunc("/api/open-discord", s.handleOpenDiscord)
 
 	fileServer := http.FileServer(http.FS(s.webFS))
 	mux.Handle("/", fileServer)
@@ -136,6 +139,25 @@ func (s *AppServer) handleExit(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	close(s.exitChan)
+}
+
+func (s *AppServer) handleOpenDiscord(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		_ = exec.Command("cmd", "/c", "start", "discord://").Start()
+	case "linux":
+		_ = exec.Command("xdg-open", "discord://").Start()
+	case "darwin":
+		_ = exec.Command("open", "discord://").Start()
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
 func (s *AppServer) runTimer() {

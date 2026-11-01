@@ -1,7 +1,7 @@
-# 🎮 Discord Quest Helper (Go Edition)
+# 🎮 Discord Quest Helper
 
 > Ультралегкий, быстрый и безопасный эмулятор игр для выполнения квестов Discord (700 Orbs, аватары, эксклюзивные награды).  
-> **Вес всего ~5.6 МБ**, мгновенный запуск, 0% лагов, нативный тёмный интерфейс в стиле Discord.
+> **Вес всего 5.6 МБ**, мгновенный запуск, автономное нативное окно в стиле Discord, автоматическое сворачивание игр.
 
 ![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)
 ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux-5865F2?style=flat)
@@ -10,56 +10,57 @@
 
 ---
 
-## ⚡ Почему Go-версия лучше
+## ⚡ Особенности
 
-| Параметр | Старая Python-версия | Новая Go-версия |
-| :--- | :--- | :--- |
-| **Размер файла** | ~150 МБ (с PyInstaller) | **5.6 МБ** (один автономный `.exe`) |
-| **Время запуска** | 2–4 секунды | **0.05 секунды** (мгновенно) |
-| **Потребление RAM** | ~120 МБ | **~25 МБ** |
-| **Плавность GUI** | Лаги, спам painter | **Идеальные 144 FPS** (CSS/SVG аппаратное ускорение) |
-| **Поддержка Linux** | Нет (только Windows) | **Полная кроссплатформенность (Windows + Linux)** |
-| **Установка зависимостей** | Нужен Python / pip | **НЕ требует установки чего-либо** |
+* **Полная автономность:** Один файл `.exe`, не требует установки Go, Python или браузерных расширений.
+* **Нативный вид:** Открывается отдельным центрированным окном приложения (Chromium Standalone App Mode).
+* **Фоновый запуск:** Окно эмулируемой игры сразу создается свёрнутым в панели задач и не перекрывает экран.
+* **100% безопасность:** Не требует токенов аккаунта Discord, не внедряется в память, бан полностью исключен.
+* **Кастомные игры:** Любые добавленные процессы сохраняются в памяти и доступны после перезапуска.
 
 ---
 
 ## 🎮 Поддерживаемые игры (процессы)
 
-Вместо привязки к постоянно меняющимся названиям квестов приложение сфокусировано на постоянных процессах игр:
-
-* 🧱 **Roblox** $\rightarrow$ `RobloxPlayerBeta.exe` (*Scary Shawarma Kiosk*, *99 Nights in the Forest* и др.)
-* 🎯 **Call of Duty: Modern Warfare 4** $\rightarrow$ `cod26-cod.exe` (*700 Orbs, 2XP Token, Calling Card*)
-* 🧟 **Resident Evil Sale** $\rightarrow$ `re7.exe`, `re4.exe` (*Resident Evil 7*, *Village*, *RE4*)
-* 🧟‍♂️ **Once Human** $\rightarrow$ `once_human.exe` (*Once Human Free Expansion*)
-* ⚔️ **Where Winds Meet** $\rightarrow$ `wwm.exe` (*Version 2.3: Friends From Afar*)
-* 🛡️ **Arknights: Endfield** $\rightarrow$ `endfield.exe` (*Endfield on Steam Quest*)
-* 🦊 **Firefox Browser** $\rightarrow$ `firefox.exe` (*Firefox 15-minute Quest*)
-* 🔫 **VALORANT** $\rightarrow$ `VALORANT-Win64-Shipping.exe` (*Avatar Decoration Quest*)
-* ✍️ **Свой процесс** $\rightarrow$ поле ввода любого кастомного `.exe` для любых новых игр.
+* **Roblox** $\rightarrow$ `RobloxPlayerBeta.exe` (*Scary Shawarma Kiosk*, *99 Nights in the Forest* и др.)
+* **Call of Duty: Modern Warfare 4** $\rightarrow$ `cod26-cod.exe` (*700 Orbs, 2XP Token, Calling Card*)
+* **Resident Evil Sale** $\rightarrow$ `re7.exe` (*Resident Evil 7*, *Village*, *RE4*)
+* **Once Human** $\rightarrow$ `once_human.exe` (*Once Human Free Expansion*)
+* **Where Winds Meet** $\rightarrow$ `wwm.exe` (*Version 2.3: Friends From Afar*)
+* **Arknights: Endfield** $\rightarrow$ `endfield.exe` (*Endfield on Steam Quest*)
+* **Firefox Browser** $\rightarrow$ `firefox.exe` (*Firefox 15-minute Quest*)
+* **VALORANT** $\rightarrow$ `win64\VALORANT-Win64-Shipping.exe` (*Hush Quest Avatar Decoration*)
+* **EA SPORTS FC 27** $\rightarrow$ `fc27.exe` (*Steam SKU 4080220 Integration*)
+* **Пользовательский процесс** $\rightarrow$ поле ввода для любого `.exe`.
 
 ---
 
-## 🚀 Как пользоваться
+## 🚀 Скачать и запустить
 
-1. В Discord откройте вкладку **Quests** и нажмите **«Accept Quest»**.
-2. Запустите **`discord-quest-helper.exe`** (или `run.bat`).
-3. Выберите нужную игру в списке слева (или введите свой `.exe`).
-4. Нажмите **«🚀 Запустить (15 мин)»**.
-5. Появится небольшое окно игры. Сверните его (не закрывая).
-6. Через 15 минут прозвучит звуковой сигнал, и квест в Discord будет готов к получению наград!
+### Для пользователей (без установки Go):
+1. Перейдите во вкладку [Releases](https://github.com/veykax/discord-quest-helper/releases).
+2. Скачайте файл **`discord-quest-helper.exe`**.
+3. Запустите его двойным кликом.
+
+### Инструкция:
+1. В приложении Discord откройте вкладку **Quests** и нажмите **«Accept Quest»**.
+2. В **Discord Quest Helper** выберите игру из списка.
+3. Нажмите кнопку **«Запустить эмуляцию (15 мин)»**.
+4. Окно игры автоматически появится свёрнутым в панели задач.
+5. Через 15 минут прозвучит звуковой сигнал и появится уведомление — заберите награду в Discord!
 
 ---
 
 ## 🛠️ Сборка из исходников
 
-Требуется установленный Go:
+Если вы хотите собрать бинарники самостоятельно:
 
 ```bash
-# Для Windows (без консольного окна)
-go build -ldflags="-s -w -H windowsgui" -o discord-quest-helper.exe
+# Windows
+build.bat
 
-# Для Linux
-go build -ldflags="-s -w" -o discord-quest-helper
+# Linux
+./build.sh
 ```
 
 ---
