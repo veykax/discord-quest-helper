@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"discord-quest-helper/internal/config"
+	"discord-quest-helper/internal/quests"
 	"discord-quest-helper/internal/spoofer"
 )
 
@@ -37,6 +38,7 @@ func New(sp spoofer.Manager, webFS fs.FS, exitChan chan struct{}) *AppServer {
 
 func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/games", s.handleGames)
+	mux.HandleFunc("/api/quests", s.handleQuests)
 	mux.HandleFunc("/api/status", s.handleStatus)
 	mux.HandleFunc("/api/start", s.handleStart)
 	mux.HandleFunc("/api/stop", s.handleStop)
@@ -55,6 +57,12 @@ func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 func (s *AppServer) handleGames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(config.SupportedGames)
+}
+
+func (s *AppServer) handleQuests(w http.ResponseWriter, r *http.Request) {
+	resp := quests.ReadQuests(config.SupportedGames)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 type StatusResponse struct {
@@ -79,13 +87,14 @@ func (s *AppServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type StartRequest struct {
-	ID           string `json:"id"`
-	Title        string `json:"title"`
-	ExeName      string `json:"exe"`
-	WindowTitle  string `json:"windowTitle"`
-	SteamFolder  string `json:"steamFolder"`
-	SteamAppID   string `json:"steamAppId"`
-	DiscordAppID string `json:"discordAppId"`
+	ID              string `json:"id"`
+	Title           string `json:"title"`
+	ExeName         string `json:"exe"`
+	WindowTitle     string `json:"windowTitle"`
+	SteamFolder     string `json:"steamFolder"`
+	SteamAppID      string `json:"steamAppId"`
+	DiscordAppID    string `json:"discordAppId"`
+	DurationSeconds int    `json:"durationSeconds,omitempty"`
 }
 
 func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +119,11 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	duration := config.QuestDurationSeconds
+	if req.DurationSeconds > 0 {
+		duration = req.DurationSeconds
+	}
+
 	s.mu.Lock()
 	s.isRunning = true
 	s.currentGame = config.GameItem{
@@ -118,7 +132,8 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 		ExeName:     req.ExeName,
 		WindowTitle: wTitle,
 	}
-	s.remainingSeconds = s.totalSeconds
+	s.totalSeconds = duration
+	s.remainingSeconds = duration
 	s.mu.Unlock()
 
 	go s.runTimer()
@@ -157,11 +172,11 @@ func (s *AppServer) handleOpenDiscord(w http.ResponseWriter, r *http.Request) {
 	switch runtime.GOOS {
 	case "windows":
 		// rundll32 не создает консольного окна cmd
-		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", "discord://").Start()
+		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", "discord://-/quests").Start()
 	case "linux":
-		_ = exec.Command("xdg-open", "discord://").Start()
+		_ = exec.Command("xdg-open", "discord://-/quests").Start()
 	case "darwin":
-		_ = exec.Command("open", "discord://").Start()
+		_ = exec.Command("open", "discord://-/quests").Start()
 	}
 
 	w.WriteHeader(http.StatusOK)

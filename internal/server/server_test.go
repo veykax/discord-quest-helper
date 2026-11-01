@@ -104,4 +104,13 @@ func TestServerRoutes(t *testing.T) {
 	if mockSp.IsRunning() {
 		t.Fatalf("expected mock spoofer to be stopped")
 	}
+
+	// 5. GET /api/quests
+	req = httptest.NewRequest(http.MethodGet, "/api/quests", nil)
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 on /api/quests, got %d", rec.Code)
+	}
 }

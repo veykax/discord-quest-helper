@@ -46,10 +46,11 @@
 
 ## Features
 
+- **Auto-Detection of Active Quests:** Automatically reads active quests and real-time progress directly from Discord's local disk cache. 100% offline, zero network requests, zero token or account risk.
+- **Auto-Sorting by Quest Status:** Games with active quests are highlighted and automatically prioritized to the top of your list.
 - **Zero External Dependencies:** Compiles into a single standalone executable (~7 MB). Does not require Go, Python, Node.js, Electron, or browser extensions.
 - **Cross-Platform Support:** Fully functional on **Windows** (10/11) and **Linux** (Flatpak & Native Discord installations).
 - **Native Standalone Window:** Runs in an isolated, border-clean application window centered on your display with minimum size protection.
-- **Auto-Minimized Game Stubs:** Simulated game windows start automatically minimized in the taskbar so they never interrupt your work.
 - **Process Lifecycle Sync:** Closing the simulation window from your taskbar automatically halts the quest timer.
 - **Steam & Subpath Verification:** Supports relative directory paths (e.g., `win64/` for VALORANT, `once human/` for Once Human) and Steam library manifests (`appmanifest_*.acf` + `steam_appid.txt`).
 - **Custom Game Support:** Add any custom `.exe` for future quests; entries persist locally across restarts.
@@ -63,6 +64,7 @@
 Includes verified quest signatures for popular titles:
 
 - **Roblox** (`RobloxPlayerBeta.exe`)
+- **Apex Legends** (`r5apex.exe`, Steam Integration)
 - **Once Human** (`once human/once_human.exe`)
 - **Call of Duty: Modern Warfare** (`cod26-cod.exe`)
 - **Resident Evil 7 biohazard** (`re7.exe`)
@@ -106,7 +108,7 @@ Includes verified quest signatures for popular titles:
 ### Build Commands
 
 ```bash
-# Windows build (GUI subsystem, stripped binary)
+# Windows build (GUI subsystem, stripped binary, embedded icon)
 go build -ldflags="-s -w -H windowsgui" -o build/discord-quest-helper.exe
 
 # Linux build (stripped binary)

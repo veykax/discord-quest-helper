@@ -18,15 +18,17 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-brand">
-        <div class="brand-logo" title="Discord Quest Helper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <div class="brand-logo" id="brandLogo" title="Discord Quest Helper">
+          <svg class="ghost-mascot" id="ghostSvg" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <!-- Ghost Silhouette -->
-            <path d="M12 2C7 2 4 5.5 4 10.5V19.5L6.5 18L9.5 19.5L12 18L14.5 19.5L17.5 18L20 19.5V10.5C20 5.5 17 2 12 2Z" fill="#FFFFFF"/>
+            <path class="ghost-body" d="M12 2C7 2 4 5.5 4 10.5V19.5L6.5 18L9.5 19.5L12 18L14.5 19.5L17.5 18L20 19.5V10.5C20 5.5 17 2 12 2Z" fill="#FFFFFF"/>
             <!-- Eyes -->
-            <circle cx="9" cy="9.5" r="1.8" fill="#5865F2"/>
-            <circle cx="9.6" cy="9.1" r="0.6" fill="#FFFFFF"/>
-            <circle cx="15" cy="9.5" r="1.8" fill="#5865F2"/>
-            <circle cx="15.6" cy="9.1" r="0.6" fill="#FFFFFF"/>
+            <g class="ghost-eyes" id="ghostEyes">
+              <circle class="eye-pupil" cx="9" cy="9.5" r="1.8" fill="#5865F2"/>
+              <circle class="eye-sparkle" cx="9.6" cy="9.1" r="0.6" fill="#FFFFFF"/>
+              <circle class="eye-pupil" cx="15" cy="9.5" r="1.8" fill="#5865F2"/>
+              <circle class="eye-sparkle" cx="15.6" cy="9.1" r="0.6" fill="#FFFFFF"/>
+            </g>
           </svg>
         </div>
         <div class="brand-text">
@@ -35,6 +37,14 @@
         </div>
       </div>
       <div class="header-actions">
+        <!-- Sync Quests Button -->
+        <button class="icon-btn" id="syncQuestsBtn" title="Sync Discord Quests" aria-label="Sync Quests">
+          <svg id="syncIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
         <!-- Language Switcher -->
         <button class="lang-btn" id="langToggleBtn" title="Switch language" aria-label="Language">EN</button>
         <!-- Sound Toggle -->
@@ -104,6 +114,18 @@
               <span class="status-dot"></span>
               <span id="statusText">Idle</span>
             </span>
+          </div>
+        </div>
+
+        <!-- Smart Quest Banner -->
+        <div class="quest-smart-banner hidden" id="questSmartBanner">
+          <div class="banner-badge-icon" id="bannerBadgeIcon"></div>
+          <div class="banner-content">
+            <div class="banner-headline">
+              <span class="banner-title" id="bannerTitle">Active Discord Quest</span>
+              <span class="banner-tag" id="bannerTag">In Progress</span>
+            </div>
+            <div class="banner-desc" id="bannerDesc">Progress: 14:43 / 15:00. Timer optimized to finish remaining time!</div>
           </div>
         </div>
 

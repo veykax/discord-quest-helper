@@ -36,3 +36,25 @@ func TestSpooferLifecycle(t *testing.T) {
 		t.Fatalf("expected spoofer to be stopped")
 	}
 }
+
+func TestProcessExitStopsRunning(t *testing.T) {
+	sp := New()
+	err := sp.Start("RobloxPlayerBeta.exe", "Roblox", "", "", "363445589247131668")
+	if err != nil {
+		t.Fatalf("spoofer Start failed: %v", err)
+	}
+
+	if !sp.IsRunning() {
+		t.Fatalf("expected spoofer to be running")
+	}
+
+	// Stop spoofer directly
+	_ = sp.Stop()
+
+	// Wait up to 500ms
+	time.Sleep(100 * time.Millisecond)
+
+	if sp.IsRunning() {
+		t.Fatalf("expected sp.IsRunning() to be false after process termination")
+	}
+}

@@ -231,8 +231,10 @@ func (m *linuxManager) Start(exeName, windowTitle, steamFolder, steamAppID, disc
 		m.mu.Lock()
 		if m.cmd == cmd {
 			m.cmd = nil
-			if m.ipcConn == nil {
-				m.currentName = ""
+			m.currentName = ""
+			if m.ipcConn != nil {
+				_ = m.ipcConn.Close()
+				m.ipcConn = nil
 			}
 		}
 		m.mu.Unlock()
@@ -301,7 +303,7 @@ func (m *linuxManager) stopUnlocked() error {
 func (m *linuxManager) IsRunning() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.ipcConn != nil || (m.cmd != nil && m.cmd.Process != nil)
+	return m.cmd != nil && m.cmd.Process != nil
 }
 
 func (m *linuxManager) CurrentGame() string {

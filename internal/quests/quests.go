@@ -1,0 +1,393 @@
+package quests
+
+import (
+	"bytes"
+	"compress/gzip"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+	"unicode"
+
+	"discord-quest-helper/internal/config"
+)
+
+// QuestStatus represents a Discord quest detected from the local Discord cache.
+type QuestStatus struct {
+	ID               string `json:"id"`
+	QuestName        string `json:"questName"`
+	GameTitle        string `json:"gameTitle"`
+	AppID            string `json:"appId"`
+	AppName          string `json:"appName"`
+	TargetSeconds    int    `json:"targetSeconds"`
+	ProgressSeconds  int    `json:"progressSeconds"`
+	RemainingSeconds int    `json:"remainingSeconds"`
+	Enrolled         bool   `json:"enrolled"`
+	Completed        bool   `json:"completed"`
+	Claimed          bool   `json:"claimed"`
+	MatchedGameID    string `json:"matchedGameId,omitempty"`
+}
+
+// QuestsResponse is the JSON response returned by the /api/quests endpoint.
+type QuestsResponse struct {
+	Quests      []QuestStatus `json:"quests"`
+	FoundCache  bool          `json:"foundCache"`
+	CachePath   string        `json:"cachePath,omitempty"`
+	LastUpdated string        `json:"lastUpdated,omitempty"`
+	ModUnix     int64         `json:"modUnix,omitempty"`
+	Error       string        `json:"error,omitempty"`
+}
+
+// Internal JSON structure for Discord /api/v9/quests/@me response stored in Chromium cache.
+type rawDiscordCache struct {
+	Quests []struct {
+		ID     string `json:"id"`
+		Config struct {
+			Application struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"application"`
+			Messages struct {
+				QuestName string `json:"quest_name"`
+				GameTitle string `json:"game_title"`
+			} `json:"messages"`
+			TaskConfigV2 struct {
+				Tasks map[string]struct {
+					Type         string `json:"type"`
+					Target       int    `json:"target"`
+					Applications []struct {
+						ID string `json:"id"`
+					} `json:"applications"`
+				} `json:"tasks"`
+			} `json:"task_config_v2"`
+			TaskConfig struct {
+				Tasks map[string]struct {
+					Type         string `json:"type"`
+					Target       int    `json:"target"`
+					Applications []struct {
+						ID string `json:"id"`
+					} `json:"applications"`
+				} `json:"tasks"`
+			} `json:"task_config"`
+		} `json:"config"`
+		UserStatus *struct {
+			EnrolledAt  *string `json:"enrolled_at"`
+			CompletedAt *string `json:"completed_at"`
+			ClaimedAt   *string `json:"claimed_at"`
+			Progress    map[string]struct {
+				Value float64 `json:"value"`
+			} `json:"progress"`
+		} `json:"user_status"`
+	} `json:"quests"`
+}
+
+const (
+	// Deterministic Chromium Simple Cache key for "1/0/https://discord.com/api/v9/quests/@me"
+	cacheFileName = "6a03c8f27701ed48_0"
+)
+
+// candidateDirs returns a list of candidate cache directories based on OS and common Discord installs.
+func candidateDirs() []string {
+	var dirs []string
+
+	// Custom environment variable override if provided
+	if custom := os.Getenv("DISCORD_CACHE_DIR"); custom != "" {
+		dirs = append(dirs, custom)
+	}
+
+	home, _ := os.UserHomeDir()
+
+	switch runtime.GOOS {
+	case "windows":
+		appData := os.Getenv("APPDATA")
+		localAppData := os.Getenv("LOCALAPPDATA")
+		discordFlavors := []string{"discord", "discordcanary", "discordptb", "discorddevelopment"}
+
+		if appData != "" {
+			for _, flavor := range discordFlavors {
+				dirs = append(dirs, filepath.Join(appData, flavor, "Cache", "Cache_Data"))
+			}
+		}
+		if localAppData != "" {
+			for _, flavor := range []string{"Discord", "DiscordCanary", "DiscordPTB"} {
+				dirs = append(dirs, filepath.Join(localAppData, flavor, "Cache", "Cache_Data"))
+			}
+		}
+
+	case "linux":
+		if home != "" {
+			// Flatpak Discord locations
+			flatpaks := []struct {
+				appID  string
+				config string
+			}{
+				{"com.discordapp.Discord", "discord"},
+				{"com.discordapp.DiscordCanary", "discordcanary"},
+				{"com.discordapp.DiscordPTB", "discordptb"},
+			}
+			for _, fp := range flatpaks {
+				dirs = append(dirs, filepath.Join(home, ".var", "app", fp.appID, "config", fp.config, "Cache", "Cache_Data"))
+			}
+
+			// Native Linux ~/.config locations
+			flavors := []string{"discord", "discordcanary", "discordptb"}
+			for _, flavor := range flavors {
+				dirs = append(dirs, filepath.Join(home, ".config", flavor, "Cache", "Cache_Data"))
+			}
+
+			// Snap Discord
+			dirs = append(dirs, filepath.Join(home, "snap", "discord", "current", ".config", "discord", "Cache", "Cache_Data"))
+		}
+
+	case "darwin":
+		if home != "" {
+			dirs = append(dirs, filepath.Join(home, "Library", "Application Support", "discord", "Cache", "Cache_Data"))
+			dirs = append(dirs, filepath.Join(home, "Library", "Application Support", "discordcanary", "Cache", "Cache_Data"))
+		}
+	}
+
+	return dirs
+}
+
+// FindFreshestCacheFile locates the most recently updated quests cache file on disk.
+func FindFreshestCacheFile() (string, time.Time, error) {
+	if customFile := os.Getenv("DISCORD_CACHE_FILE"); customFile != "" {
+		if fi, err := os.Stat(customFile); err == nil && !fi.IsDir() {
+			return customFile, fi.ModTime(), nil
+		}
+	}
+
+	var bestPath string
+	var bestMod time.Time
+
+	dirs := candidateDirs()
+	for _, dir := range dirs {
+		p := filepath.Join(dir, cacheFileName)
+		fi, err := os.Stat(p)
+		if err == nil && !fi.IsDir() {
+			if fi.ModTime().After(bestMod) {
+				bestMod = fi.ModTime()
+				bestPath = p
+			}
+		}
+	}
+
+	if bestPath != "" {
+		return bestPath, bestMod, nil
+	}
+
+	return "", time.Time{}, fmt.Errorf("no discord quests cache found in candidate paths")
+}
+
+// ReadQuests parses the Discord quests cache and matches quests against SupportedGames.
+func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
+	filePath, modTime, err := FindFreshestCacheFile()
+	if err != nil {
+		return QuestsResponse{
+			Quests:     []QuestStatus{},
+			FoundCache: false,
+			Error:      err.Error(),
+		}
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return QuestsResponse{
+			Quests:     []QuestStatus{},
+			FoundCache: true,
+			CachePath:  filePath,
+			Error:      fmt.Sprintf("read cache file: %v", err),
+		}
+	}
+
+	// Chromium Simple Cache Stream 1 starts with gzip header: 0x1F, 0x8B, 0x08
+	gzipHeader := []byte{0x1f, 0x8b, 0x08}
+	offset := bytes.Index(data, gzipHeader)
+	if offset == -1 {
+		return QuestsResponse{
+			Quests:     []QuestStatus{},
+			FoundCache: true,
+			CachePath:  filePath,
+			Error:      "gzip magic header not found in cache entry",
+		}
+	}
+
+	zr, err := gzip.NewReader(bytes.NewReader(data[offset:]))
+	if err != nil {
+		return QuestsResponse{
+			Quests:     []QuestStatus{},
+			FoundCache: true,
+			CachePath:  filePath,
+			Error:      fmt.Sprintf("create gzip reader: %v", err),
+		}
+	}
+	defer zr.Close()
+
+	// Prevent reading beyond the single gzip member into Chromium cache trailer
+	zr.Multistream(false)
+
+	decompressed, err := io.ReadAll(zr)
+	if err != nil {
+		return QuestsResponse{
+			Quests:     []QuestStatus{},
+			FoundCache: true,
+			CachePath:  filePath,
+			Error:      fmt.Sprintf("decompress stream: %v", err),
+		}
+	}
+
+	var raw rawDiscordCache
+	if err := json.Unmarshal(decompressed, &raw); err != nil {
+		return QuestsResponse{
+			Quests:     []QuestStatus{},
+			FoundCache: true,
+			CachePath:  filePath,
+			Error:      fmt.Sprintf("unmarshal json: %v", err),
+		}
+	}
+
+	var result []QuestStatus
+	for _, q := range raw.Quests {
+		if q.UserStatus == nil || q.UserStatus.EnrolledAt == nil {
+			// Skip quests the user hasn't enrolled in
+			continue
+		}
+
+		target := 900
+		var taskAppIDs []string
+
+		if t, ok := q.Config.TaskConfigV2.Tasks["PLAY_ON_DESKTOP"]; ok {
+			if t.Target > 0 {
+				target = t.Target
+			}
+			for _, app := range t.Applications {
+				if app.ID != "" {
+					taskAppIDs = append(taskAppIDs, app.ID)
+				}
+			}
+		} else if t, ok := q.Config.TaskConfig.Tasks["PLAY_ON_DESKTOP"]; ok {
+			if t.Target > 0 {
+				target = t.Target
+			}
+			for _, app := range t.Applications {
+				if app.ID != "" {
+					taskAppIDs = append(taskAppIDs, app.ID)
+				}
+			}
+		}
+
+		progress := 0
+		if p, ok := q.UserStatus.Progress["PLAY_ON_DESKTOP"]; ok {
+			progress = int(p.Value)
+		}
+
+		remaining := target - progress
+		if remaining < 0 {
+			remaining = 0
+		}
+
+		qName := q.Config.Messages.QuestName
+		if qName == "" {
+			qName = q.Config.Messages.GameTitle
+		}
+
+		gTitle := q.Config.Messages.GameTitle
+		if gTitle == "" {
+			gTitle = qName
+		}
+
+		appID := q.Config.Application.ID
+		appName := q.Config.Application.Name
+
+		qs := QuestStatus{
+			ID:               q.ID,
+			QuestName:        qName,
+			GameTitle:        gTitle,
+			AppID:            appID,
+			AppName:          appName,
+			TargetSeconds:    target,
+			ProgressSeconds:  progress,
+			RemainingSeconds: remaining,
+			Enrolled:         q.UserStatus.EnrolledAt != nil,
+			Completed:        q.UserStatus.CompletedAt != nil,
+			Claimed:          q.UserStatus.ClaimedAt != nil,
+		}
+
+		// Match quest to supported game
+		qs.MatchedGameID = matchGameID(qs, taskAppIDs, supportedGames)
+		result = append(result, qs)
+	}
+
+	return QuestsResponse{
+		Quests:      result,
+		FoundCache:  true,
+		CachePath:   filePath,
+		LastUpdated: modTime.UTC().Format(time.RFC3339),
+		ModUnix:     modTime.Unix(),
+	}
+}
+
+// normalizeText cleans a string to lowercase alphanumeric words for fuzzy matching.
+func normalizeText(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+		} else if unicode.IsSpace(r) {
+			b.WriteRune(' ')
+		}
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+// matchGameID finds the corresponding GameItem.ID in SupportedGames for this quest.
+func matchGameID(qs QuestStatus, taskAppIDs []string, games []config.GameItem) string {
+	// 1. Direct AppID match
+	for _, g := range games {
+		if g.DiscordAppID != "" {
+			if qs.AppID != "" && g.DiscordAppID == qs.AppID {
+				return g.ID
+			}
+			for _, tid := range taskAppIDs {
+				if g.DiscordAppID == tid {
+					return g.ID
+				}
+			}
+		}
+	}
+
+	// 2. Normalized Title / AppName matching
+	normQuestName := normalizeText(qs.QuestName)
+	normGameTitle := normalizeText(qs.GameTitle)
+	normAppName := normalizeText(qs.AppName)
+
+	for _, g := range games {
+		normGTitle := normalizeText(g.Title)
+		normGWin := normalizeText(g.WindowTitle)
+		normGID := normalizeText(strings.ReplaceAll(g.ID, "_", " "))
+
+		// Check if normalized title is contained in quest name or app name
+		if normGTitle != "" {
+			if strings.Contains(normQuestName, normGTitle) ||
+				strings.Contains(normGameTitle, normGTitle) ||
+				strings.Contains(normAppName, normGTitle) ||
+				strings.Contains(normGTitle, normAppName) {
+				return g.ID
+			}
+		}
+
+		if normGWin != "" && (strings.Contains(normQuestName, normGWin) || strings.Contains(normAppName, normGWin)) {
+			return g.ID
+		}
+
+		if normGID != "" && (strings.Contains(normQuestName, normGID) || strings.Contains(normAppName, normGID)) {
+			return g.ID
+		}
+	}
+
+	return ""
+}

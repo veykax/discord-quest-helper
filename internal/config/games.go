@@ -75,6 +75,13 @@ var SupportedGames = []GameItem{
 		DiscordAppID: "700136079562375258",
 	},
 	{
+		ID:           "apex",
+		Title:        "Apex Legends",
+		ExeName:      "r5apex.exe",
+		WindowTitle:  "Apex Legends",
+		DiscordAppID: "542075586886107149",
+	},
+	{
 		ID:           "fc27",
 		Title:        "EA SPORTS FC 27",
 		ExeName:      "fc27.exe",
