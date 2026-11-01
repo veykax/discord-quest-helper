@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,7 +44,12 @@ func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/open-discord", s.handleOpenDiscord)
 
 	fileServer := http.FileServer(http.FS(s.webFS))
-	mux.Handle("/", fileServer)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/favicon.ico" || strings.HasSuffix(r.URL.Path, ".png") || r.URL.Path == "/manifest.json" {
+			w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
+		}
+		fileServer.ServeHTTP(w, r)
+	})
 }
 
 func (s *AppServer) handleGames(w http.ResponseWriter, r *http.Request) {

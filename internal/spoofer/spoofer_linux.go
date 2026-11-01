@@ -37,6 +37,8 @@ func newPlatformManager() Manager {
 	}
 }
 
+// findDiscordFlatpakInstance locates the active main Discord Flatpak container.
+// It filters out helper/zygote containers by ensuring the X11 display socket exists.
 func findDiscordFlatpakInstance() string {
 	cmd := exec.Command("flatpak", "ps", "--columns=instance,application")
 	out, err := cmd.Output()
@@ -60,15 +62,27 @@ func findDiscordFlatpakInstance() string {
 		return candidates[0]
 	}
 
-	// If multiple (e.g. zygote helper child and main instance), find the one with the Discord main process
+	// Find the instance that has the X11 socket and the most Discord processes (main instance)
+	var bestInst string
+	maxProcs := -1
 	for _, inst := range candidates {
-		chk := exec.Command("flatpak", "enter", inst, "pidof", "Discord")
-		out, err := chk.Output()
-		if err == nil && len(strings.Fields(string(out))) > 1 {
-			return inst
+		chkSocket := exec.Command("flatpak", "enter", inst, "sh", "-c", "test -e /tmp/.X11-unix/X0 && echo OK")
+		if sOut, err := chkSocket.Output(); err == nil && strings.TrimSpace(string(sOut)) == "OK" {
+			chkProcs := exec.Command("flatpak", "enter", inst, "pidof", "Discord")
+			numProcs := 0
+			if pOut, err := chkProcs.Output(); err == nil {
+				numProcs = len(strings.Fields(string(pOut)))
+			}
+			if numProcs > maxProcs {
+				maxProcs = numProcs
+				bestInst = inst
+			}
 		}
 	}
 
+	if bestInst != "" {
+		return bestInst
+	}
 	return candidates[0]
 }
 
@@ -165,9 +179,13 @@ func (m *linuxManager) Start(exeName, windowTitle, steamFolder, steamAppID, disc
 	m.currentExe = targetPath
 
 	var cmd *exec.Cmd
+	display := os.Getenv("DISPLAY")
+	if display == "" {
+		display = ":0"
+	}
 	if flatpakInst != "" {
 		cmd = exec.Command("flatpak", "enter", flatpakInst,
-			"env", "DISPLAY=:0", "XAUTHORITY=/run/flatpak/Xauthority",
+			"env", "DISPLAY="+display, "XAUTHORITY=/run/flatpak/Xauthority",
 			targetPath, "--stub", windowTitle)
 	} else {
 		cmd = exec.Command(targetPath, "--stub", windowTitle)

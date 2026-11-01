@@ -147,6 +147,10 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 	case "linux":
 		ensureLinuxDesktopEntry()
 
+		home, _ := os.UserHomeDir()
+		profileDir := filepath.Join(home, ".local", "share", "discord-quest-helper", "browser-profile")
+		_ = os.MkdirAll(profileDir, 0755)
+
 		browsers := []string{
 			"google-chrome",
 			"google-chrome-stable",
@@ -156,7 +160,6 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 			"microsoft-edge",
 			"vivaldi",
 		}
-		profileDir := filepath.Join(os.TempDir(), "DiscordQuestHelper_AppProfile")
 		appArg := fmt.Sprintf("--app=%s", url)
 		sizeArg := fmt.Sprintf("--window-size=%d,%d", width, height)
 		posArg := fmt.Sprintf("--window-position=%d,%d", posX, posY)
@@ -301,24 +304,46 @@ func ensureLinuxDesktopEntry() {
 	if err != nil {
 		return
 	}
-	iconDir := filepath.Join(home, ".local", "share", "icons", "hicolor", "192x192", "apps")
-	_ = os.MkdirAll(iconDir, 0755)
-	iconPath := filepath.Join(iconDir, "discord-quest-helper.png")
-	if iconData, err := embeddedWebFS.ReadFile("web/icon-192.png"); err == nil {
-		_ = os.WriteFile(iconPath, iconData, 0644)
+
+	// 1. Install hicolor icons in multiple standard resolutions
+	sizes := []struct {
+		folder string
+		file   string
+	}{
+		{"64x64", "web/favicon.png"},
+		{"192x192", "web/icon-192.png"},
+		{"512x512", "web/icon-512.png"},
+	}
+	for _, s := range sizes {
+		dir := filepath.Join(home, ".local", "share", "icons", "hicolor", s.folder, "apps")
+		_ = os.MkdirAll(dir, 0755)
+		if data, err := embeddedWebFS.ReadFile(s.file); err == nil {
+			_ = os.WriteFile(filepath.Join(dir, "discord-quest-helper.png"), data, 0644)
+		}
+	}
+
+	// Fallback in pixmaps
+	pixmapsDir := filepath.Join(home, ".local", "share", "pixmaps")
+	_ = os.MkdirAll(pixmapsDir, 0755)
+	if data, err := embeddedWebFS.ReadFile("web/icon-192.png"); err == nil {
+		_ = os.WriteFile(filepath.Join(pixmapsDir, "discord-quest-helper.png"), data, 0644)
 	}
 
 	appDir := filepath.Join(home, ".local", "share", "applications")
 	_ = os.MkdirAll(appDir, 0755)
 	desktopPath := filepath.Join(appDir, "discord-quest-helper.desktop")
-	desktopContent := fmt.Sprintf(`[Desktop Entry]
+	desktopContent := `[Desktop Entry]
 Type=Application
 Name=Discord Quest Helper
 Comment=Game process emulator for Discord Quest rewards
-Icon=%s
+Icon=discord-quest-helper
 StartupWMClass=discord-quest-helper
 Terminal=false
 Categories=Utility;
-`, iconPath)
+`
 	_ = os.WriteFile(desktopPath, []byte(desktopContent), 0644)
+
+	// Refresh system cache for KDE Plasma and GNOME
+	_ = exec.Command("update-desktop-database", appDir).Run()
+	_ = exec.Command("kbuildsycoca6").Run()
 }
