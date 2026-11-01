@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os/exec"
@@ -87,14 +88,14 @@ func (s *AppServer) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type StartRequest struct {
-	ID              string `json:"id"`
-	Title           string `json:"title"`
-	ExeName         string `json:"exe"`
-	WindowTitle     string `json:"windowTitle"`
-	SteamFolder     string `json:"steamFolder"`
-	SteamAppID      string `json:"steamAppId"`
-	DiscordAppID    string `json:"discordAppId"`
-	DurationSeconds int    `json:"durationSeconds,omitempty"`
+	ID              string      `json:"id"`
+	Title           string      `json:"title"`
+	ExeName         string      `json:"exe"`
+	WindowTitle     string      `json:"windowTitle"`
+	SteamFolder     string      `json:"steamFolder"`
+	SteamAppID      interface{} `json:"steamAppId"`
+	DiscordAppID    interface{} `json:"discordAppId"`
+	DurationSeconds int         `json:"durationSeconds,omitempty"`
 }
 
 func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +115,31 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 		wTitle = req.Title
 	}
 
-	if err := s.spoofer.Start(req.ExeName, wTitle, req.SteamFolder, req.SteamAppID, req.DiscordAppID); err != nil {
+	steamAppID := ""
+	if req.SteamAppID != nil {
+		switch v := req.SteamAppID.(type) {
+		case string:
+			steamAppID = v
+		case float64:
+			if v > 0 {
+				steamAppID = fmt.Sprintf("%.0f", v)
+			}
+		}
+	}
+
+	discordAppID := ""
+	if req.DiscordAppID != nil {
+		switch v := req.DiscordAppID.(type) {
+		case string:
+			discordAppID = v
+		case float64:
+			if v > 0 {
+				discordAppID = fmt.Sprintf("%.0f", v)
+			}
+		}
+	}
+
+	if err := s.spoofer.Start(req.ExeName, wTitle, req.SteamFolder, steamAppID, discordAppID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -127,10 +152,13 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.isRunning = true
 	s.currentGame = config.GameItem{
-		ID:          req.ID,
-		Title:       req.Title,
-		ExeName:     req.ExeName,
-		WindowTitle: wTitle,
+		ID:           req.ID,
+		Title:        req.Title,
+		ExeName:      req.ExeName,
+		WindowTitle:  wTitle,
+		SteamFolder:  req.SteamFolder,
+		SteamAppID:   steamAppID,
+		DiscordAppID: discordAppID,
 	}
 	s.totalSeconds = duration
 	s.remainingSeconds = duration
@@ -169,14 +197,33 @@ func (s *AppServer) handleOpenDiscord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	uri := "discord://-/quest-home"
+
 	switch runtime.GOOS {
 	case "windows":
-		// rundll32 не создает консольного окна cmd
-		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", "discord://-/quests").Start()
+		// rundll32 не создает консольного окна cmd и передает url зарегистрированному обработчику
+		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", uri).Start()
 	case "linux":
-		_ = exec.Command("xdg-open", "discord://-/quests").Start()
+		// На Linux gio open обращается напрямую к зарегистрированным desktop-файлам (Flatpak / native)
+		// без бага KDE/xdg-open с открытием пустого окна браузера
+		opened := false
+		if _, err := exec.LookPath("gio"); err == nil {
+			if err := exec.Command("gio", "open", uri).Start(); err == nil {
+				opened = true
+			}
+		}
+		if !opened {
+			if _, err := exec.LookPath("flatpak"); err == nil {
+				if err := exec.Command("flatpak", "run", "com.discordapp.Discord", uri).Start(); err == nil {
+					opened = true
+				}
+			}
+		}
+		if !opened {
+			_ = exec.Command("xdg-open", uri).Start()
+		}
 	case "darwin":
-		_ = exec.Command("open", "discord://-/quests").Start()
+		_ = exec.Command("open", uri).Start()
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -74,20 +74,22 @@ func TestServerRoutes(t *testing.T) {
 		t.Fatalf("expected running to be false")
 	}
 
-	// 3. POST /api/start
-	startBody, _ := json.Marshal(StartRequest{
-		ID:           "roblox",
-		Title:        "Roblox",
-		ExeName:      "RobloxPlayerBeta.exe",
-		WindowTitle:  "Roblox",
-		DiscordAppID: "363445589247131668",
-	})
-	req = httptest.NewRequest(http.MethodPost, "/api/start", bytes.NewReader(startBody))
+	// 3. POST /api/start (with number steamAppId and string discordAppId)
+	rawJSON := []byte(`{
+		"id": "roblox",
+		"title": "Roblox",
+		"exe": "RobloxPlayerBeta.exe",
+		"windowTitle": "Roblox",
+		"steamAppId": 0,
+		"discordAppId": 363445589247131668,
+		"durationSeconds": 915
+	}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/start", bytes.NewReader(rawJSON))
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200 on start, got %d", rec.Code)
+		t.Fatalf("expected 200 on start with numeric app ids, got %d: %s", rec.Code, rec.Body.String())
 	}
 	if !mockSp.IsRunning() {
 		t.Fatalf("expected mock spoofer to be running")

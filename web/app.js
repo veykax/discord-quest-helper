@@ -1,104 +1,78 @@
 // Localization Dictionaries
 const i18n = {
-  ru: {
-    langCode: "RU",
-    appSubtitle: "Эмуляция игровых процессов для наград Discord",
-    questProcesses: "Процессы квестов",
-    searchPlaceholder: "Поиск (Roblox, Call of Duty, RE7)...",
-    customProcess: "Пользовательский процесс",
-    customTitlePlaceholder: "Название (опционально)",
-    selectBtn: "Выбрать",
-    selectedGameLabel: "ТЕКУЩИЙ ВЫБОР",
-    statusIdle: "В ожидании",
-    statusRunning: "Эмуляция активна",
-    statusCompleted: "Выполнено",
-    timerSubTimer: "ТАЙМЕР",
-    timerSubRemaining: "ОСТАЛОСЬ",
-    timerSubCompleted: "РЕЗУЛЬТАТ",
-    captionIdle: "Выберите процесс и нажмите «Запустить эмуляцию»",
-    captionRunning: (exe) => `Discord видит процесс: ${exe}`,
-    captionCompleted: "15 минут истекли. Награда готова к получению в Discord!",
-    startBtn: "Запустить эмуляцию (15 мин)",
-    stopBtn: "Остановить",
-    hintText: "<strong>Подсказка:</strong> Запустите эмуляцию. Окно игры появится свёрнутым в панели задач. Через 15 минут прозвучит сигнал о награде.",
-    openDiscord: "Открыть вкладку квестов",
-    syncBtnTitle: "Синхронизировать квесты Discord",
-    questBadgeReady: "Готов к получению",
-    questBadgeClaimed: "Получен",
-    questRemShort: (rem) => `осталось ${rem}`,
-    bannerTagActive: "В процессе",
-    bannerTagReady: "Готов к получению",
-    bannerDescActive: (rem) => `Таймер настроен на ${rem} для гарантированного завершения.`,
-    bannerDescReady: "Квест выполнен на 100%. Откройте вкладку квестов в Discord, чтобы забрать награду.",
-    startBtnRem: (rem) => `Запустить квест (${rem})`,
-    toastSyncTitle: "Квесты Discord",
-    toastSyncFound: (n) => `Обнаружено активных квестов: ${n}`,
-    toastSyncNotFound: "Кэш квестов Discord не найден",
-    toastSyncUnchanged: "Кэш Discord еще не обновился. Откройте вкладку «Квесты» в Discord или нажмите Ctrl+R в Discord.",
-    toastCompleteTitle: "Квест завершен!",
-    toastCompleteMsg: "15 минут успешно завершены. Откройте Discord для получения награды.",
-    toastStoppedTitle: "Эмуляция остановлена",
-    toastStoppedMsg: "Окно игры было закрыто пользователем",
-    toastInputErrTitle: "Ошибка ввода",
-    toastInputErrMsg: "Укажите имя исполняемого файла процесса (.exe)",
-    toastSavedTitle: "Процесс сохранён",
-    toastSavedMsg: (exe) => `Процесс ${exe} добавлен в ваш список`,
-    toastLaunchErrTitle: "Ошибка запуска",
-    toastConnErrTitle: "Ошибка связи",
-    toastConnErrMsg: "Не удалось связаться с локальным сервисом: ",
-    soundTitle: "Звук по завершению",
-  },
   en: {
     langCode: "EN",
-    appSubtitle: "Game process emulator for Discord Quest rewards",
-    questProcesses: "Quest Processes",
-    searchPlaceholder: "Search (Roblox, Call of Duty, RE7)...",
+    questProcesses: "Processes",
+    searchPlaceholder: "Search game or .exe...",
     customProcess: "Custom Process",
-    customTitlePlaceholder: "Title (optional)",
-    selectBtn: "Select",
-    selectedGameLabel: "SELECTED GAME",
+    selectBtn: "Add",
+    openDiscord: "Open Discord",
     statusIdle: "Idle",
-    statusRunning: "Emulating",
+    statusRunning: "Running",
     statusCompleted: "Completed",
-    timerSubTimer: "TIMER",
-    timerSubRemaining: "REMAINING",
-    timerSubCompleted: "RESULT",
-    captionIdle: "Select a process and click \"Start Quest\"",
-    captionRunning: (exe) => `Discord sees process: ${exe}`,
-    captionCompleted: "15 minutes elapsed. Reward is ready to claim in Discord!",
-    startBtn: "Start Quest (15 min)",
+    captionIdle: "Select a process and start emulation",
+    captionRunning: (exe) => `Emulating process: ${exe}`,
+    captionCompleted: "Quest completed. Claim reward in Discord.",
+    startBtn: "Start (15 min)",
+    startBtnRem: (rem) => `Start (${rem})`,
     stopBtn: "Stop",
-    hintText: "<strong>Tip:</strong> Start emulation. The game window will launch minimized in the taskbar. After 15 minutes, a chime will notify you when rewards are ready.",
-    openDiscord: "Open Discord Quests",
-    syncBtnTitle: "Sync Discord Quests",
-    questBadgeReady: "Ready to claim",
+    questBadgeReady: "Ready",
     questBadgeClaimed: "Claimed",
-    questRemShort: (rem) => `${rem} left`,
-    bannerTagActive: "In Progress",
-    bannerTagReady: "Ready to claim",
-    bannerDescActive: (rem) => `Timer configured to ${rem} to guarantee completion.`,
-    bannerDescReady: "Quest completed 100%. Open Discord to claim your reward.",
-    startBtnRem: (rem) => `Start Quest (${rem})`,
-    toastSyncTitle: "Discord Quests",
-    toastSyncFound: (n) => `Detected ${n} active quest(s)`,
-    toastSyncNotFound: "Discord quest cache not found",
-    toastSyncUnchanged: "Discord cache has not updated yet. Open the Quests tab in Discord or press Ctrl+R to refresh.",
-    toastCompleteTitle: "Quest Completed!",
-    toastCompleteMsg: "15 minutes elapsed. Open Discord to claim your reward.",
-    toastStoppedTitle: "Emulation Stopped",
+    smartPreFillHint: (rem) => `Smart timer: ${rem}`,
+    readyToClaimHint: "Reward ready in Discord",
+    cacheStatusSynced: (tStr) => `Discord cache: ${tStr}`,
+    cacheStatusNotFound: "Discord cache not found",
+    toastCompleteTitle: "Quest Completed",
+    toastCompleteMsg: "Time elapsed. Open Discord to claim your reward.",
+    toastStoppedTitle: "Stopped",
     toastStoppedMsg: "Game simulation window was closed by the user",
     toastInputErrTitle: "Input Error",
-    toastInputErrMsg: "Please specify an executable process name (.exe)",
-    toastSavedTitle: "Process Saved",
-    toastSavedMsg: (exe) => `Process ${exe} saved to your list`,
+    toastInputErrMsg: "Please specify an executable name (.exe)",
+    toastSavedTitle: "Saved",
+    toastSavedMsg: (exe) => `Process ${exe} saved to list`,
     toastLaunchErrTitle: "Launch Error",
     toastConnErrTitle: "Connection Error",
-    toastConnErrMsg: "Failed to communicate with local service: ",
+    toastConnErrMsg: "Failed to communicate with service: ",
     soundTitle: "Completion sound",
+  },
+  ru: {
+    langCode: "RU",
+    questProcesses: "Процессы",
+    searchPlaceholder: "Поиск игры или .exe...",
+    customProcess: "Свой процесс",
+    selectBtn: "Добавить",
+    openDiscord: "В Discord",
+    statusIdle: "В ожидании",
+    statusRunning: "Активен",
+    statusCompleted: "Завершено",
+    captionIdle: "Выберите процесс и запустите эмуляцию",
+    captionRunning: (exe) => `Процесс эмуляции: ${exe}`,
+    captionCompleted: "Квест завершен. Награда готова в Discord.",
+    startBtn: "Запустить (15 мин)",
+    startBtnRem: (rem) => `Запустить (${rem})`,
+    stopBtn: "Остановить",
+    questBadgeReady: "Готов",
+    questBadgeClaimed: "Получен",
+    smartPreFillHint: (rem) => `Авто-таймер: ${rem}`,
+    readyToClaimHint: "Награда ждет в Discord",
+    cacheStatusSynced: (tStr) => `Кэш Discord: ${tStr}`,
+    cacheStatusNotFound: "Кэш Discord не найден",
+    toastCompleteTitle: "Квест выполнен",
+    toastCompleteMsg: "Время истекло. Откройте Discord, чтобы забрать награду.",
+    toastStoppedTitle: "Остановлено",
+    toastStoppedMsg: "Окно игры было закрыто пользователем",
+    toastInputErrTitle: "Ошибка ввода",
+    toastInputErrMsg: "Укажите имя исполняемого файла (.exe)",
+    toastSavedTitle: "Сохранено",
+    toastSavedMsg: (exe) => `Процесс ${exe} добавлен в список`,
+    toastLaunchErrTitle: "Ошибка запуска",
+    toastConnErrTitle: "Ошибка связи",
+    toastConnErrMsg: "Не удалось связаться с сервисом: ",
+    soundTitle: "Звук по завершению",
   }
 };
 
-let currentLang = localStorage.getItem("dqh_lang") || "en";
+let currentLang = localStorage.getItem("dqh_lang_v2") || "en";
 
 function t(key, arg) {
   const dict = i18n[currentLang] || i18n.en;
@@ -112,52 +86,37 @@ let allGames = [];
 let selectedGame = null;
 let isRunning = false;
 let statusInterval = null;
+let pollCount = 0;
 let isSoundEnabled = localStorage.getItem("dqh_sound") !== "false";
 let detectedQuests = [];
 let matchedQuestsByGameId = {};
 let selectedDurationSeconds = 15 * 60 + 15;
-let lastCacheModUnix = 0;
-
-// SVG Icons (replacing cheap text emojis)
-const ICON_TARGET_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
-const ICON_CHECK_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-const ICON_REWARD_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><circle cx="18" cy="12" r="2"/></svg>`;
-
-const BANNER_TARGET_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
-const BANNER_CHECK_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
 const CIRCUMFERENCE = 2 * Math.PI * 82; // 515.22
 
 // Elements
 const brandLogo = document.getElementById("brandLogo");
-const syncQuestsBtn = document.getElementById("syncQuestsBtn");
-const syncIcon = document.getElementById("syncIcon");
-const questSmartBanner = document.getElementById("questSmartBanner");
-const bannerBadgeIcon = document.getElementById("bannerBadgeIcon");
-const bannerTitle = document.getElementById("bannerTitle");
-const bannerTag = document.getElementById("bannerTag");
-const bannerDesc = document.getElementById("bannerDesc");
+const openDiscordHeaderBtn = document.getElementById("openDiscordHeaderBtn");
+const openDiscordBtnText = document.getElementById("openDiscordBtnText");
+const cacheTimeText = document.getElementById("cacheTimeText");
+const cacheDot = document.getElementById("cacheDot");
 
-const appSubtitle = document.getElementById("appSubtitle");
 const questProcessesHeading = document.getElementById("questProcessesHeading");
 const customProcessHeading = document.getElementById("customProcessHeading");
-const selectedGameLabel = document.getElementById("selectedGameLabel");
 const startBtnText = document.getElementById("startBtnText");
 const stopBtnText = document.getElementById("stopBtnText");
-const infoTipText = document.getElementById("infoTipText");
-const openDiscordBtnText = document.getElementById("openDiscordBtnText");
 
 const gamesListEl = document.getElementById("gamesList");
 const gamesCountEl = document.getElementById("gamesCount");
 const searchInput = document.getElementById("searchInput");
 const selectedGameTitle = document.getElementById("selectedGameTitle");
 const selectedGameExe = document.getElementById("selectedGameExe");
+const selectedGameQuestTag = document.getElementById("selectedGameQuestTag");
+const selectedGameHint = document.getElementById("selectedGameHint");
 const statusBadge = document.getElementById("statusBadge");
 const statusText = document.getElementById("statusText");
 const ringFill = document.getElementById("ringFill");
 const timerDigits = document.getElementById("timerDigits");
-const timerSub = document.getElementById("timerSub");
-const timerPercent = document.getElementById("timerPercent");
 const timerCaption = document.getElementById("timerCaption");
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
@@ -191,31 +150,24 @@ async function init() {
 
 function applyLanguage(lang) {
   currentLang = lang;
-  localStorage.setItem("dqh_lang", lang);
+  localStorage.setItem("dqh_lang_v2", lang);
   document.documentElement.lang = lang;
   const dict = i18n[lang] || i18n.en;
 
   if (langToggleBtn) langToggleBtn.textContent = dict.langCode;
-  if (appSubtitle) appSubtitle.textContent = dict.appSubtitle;
   if (questProcessesHeading) questProcessesHeading.textContent = dict.questProcesses;
   if (searchInput) searchInput.placeholder = dict.searchPlaceholder;
   if (customProcessHeading) customProcessHeading.textContent = dict.customProcess;
-  if (customTitleInput) customTitleInput.placeholder = dict.customTitlePlaceholder;
   if (customSelectBtn) customSelectBtn.textContent = dict.selectBtn;
-  if (selectedGameLabel) selectedGameLabel.textContent = dict.selectedGameLabel;
-  if (infoTipText) infoTipText.innerHTML = dict.hintText;
   if (openDiscordBtnText) openDiscordBtnText.textContent = dict.openDiscord;
   if (soundToggleBtn) soundToggleBtn.title = dict.soundTitle;
-  if (syncQuestsBtn) syncQuestsBtn.title = dict.syncBtnTitle;
 
   if (isRunning) {
     statusText.textContent = dict.statusRunning;
-    timerSub.textContent = dict.timerSubRemaining;
     timerCaption.textContent = dict.captionRunning(selectedGame ? selectedGame.exe : "");
     if (stopBtnText) stopBtnText.textContent = dict.stopBtn;
   } else {
     statusText.textContent = dict.statusIdle;
-    timerSub.textContent = dict.timerSubTimer;
     timerCaption.textContent = dict.captionIdle;
     if (startBtnText) {
       if (selectedDurationSeconds && selectedDurationSeconds < 900) {
@@ -227,8 +179,8 @@ function applyLanguage(lang) {
   }
 
   if (allGames.length > 0) {
-    renderGames(allGames);
-    if (selectedGame) selectGame(selectedGame);
+    renderGames(getFilteredGames());
+    updateActiveGameQuestBadge();
   }
 }
 
@@ -292,15 +244,25 @@ function sortGamesWithQuests() {
   });
 }
 
+function getFilteredGames() {
+  const q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+  if (!q) return allGames;
+  return allGames.filter(
+    (g) =>
+      g.title.toLowerCase().includes(q) ||
+      g.exe.toLowerCase().includes(q)
+  );
+}
+
 async function fetchGames() {
   try {
     const res = await fetch("/api/games");
     const serverGames = await res.json();
     const savedCustom = loadCustomGames();
     allGames = [...serverGames, ...savedCustom];
-    gamesCountEl.textContent = allGames.length;
+    if (gamesCountEl) gamesCountEl.textContent = allGames.length;
     sortGamesWithQuests();
-    renderGames(allGames);
+    renderGames(getFilteredGames());
     if (allGames.length > 0 && !selectedGame) {
       selectGame(allGames[0]);
     }
@@ -310,7 +272,6 @@ async function fetchGames() {
 }
 
 async function fetchQuests(silent = false) {
-  if (syncIcon) syncIcon.classList.add("spin");
   try {
     const res = await fetch("/api/quests");
     const data = await res.json();
@@ -324,74 +285,101 @@ async function fetchQuests(silent = false) {
     }
 
     sortGamesWithQuests();
-    renderGames(allGames);
+    renderGames(getFilteredGames());
+    updateActiveGameQuestBadge();
 
-    if (selectedGame) {
-      selectGame(selectedGame);
-    } else if (allGames.length > 0) {
+    if (!selectedGame && allGames.length > 0) {
       selectGame(allGames[0]);
     }
 
-    if (!silent) {
-      if (!data.foundCache) {
-        showToast(t("toastSyncTitle"), t("toastSyncNotFound"));
-      } else if (lastCacheModUnix > 0 && data.modUnix === lastCacheModUnix) {
-        showToast(t("toastSyncTitle"), t("toastSyncUnchanged"));
-      } else {
-        showToast(t("toastSyncTitle"), t("toastSyncFound", detectedQuests.length));
-      }
+    // Update footer cache timestamp
+    if (data.foundCache && data.modUnix) {
+      const d = new Date(data.modUnix * 1000);
+      const tStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      if (cacheTimeText) cacheTimeText.textContent = t("cacheStatusSynced", tStr);
+      if (cacheDot) cacheDot.style.background = "var(--green)";
+    } else {
+      if (cacheTimeText) cacheTimeText.textContent = t("cacheStatusNotFound");
+      if (cacheDot) cacheDot.style.background = "var(--text-muted)";
     }
-    lastCacheModUnix = data.modUnix || 0;
   } catch (err) {
     console.error("Failed to sync quests:", err);
-    if (!silent) {
-      showToast(t("toastSyncTitle"), t("toastConnErrMsg") + err);
-    }
-  } finally {
-    if (syncIcon) {
-      setTimeout(() => syncIcon.classList.remove("spin"), 500);
-    }
   }
 }
 
 function renderGames(games) {
+  if (!gamesListEl) return;
   gamesListEl.innerHTML = "";
   games.forEach((game) => {
+    const isSelected = selectedGame && selectedGame.id === game.id;
     const card = document.createElement("div");
-    card.className = `game-card ${selectedGame && selectedGame.id === game.id ? "active" : ""}`;
+    card.className = `game-card ${isSelected ? "active" : ""}`;
 
     const quest = matchedQuestsByGameId[game.id];
     let badgeHTML = "";
-    let footerExtra = "";
 
     if (quest) {
       if (quest.completed && !quest.claimed) {
-        badgeHTML = `<span class="quest-pill ready" title="${t("questBadgeReady")}"><span class="quest-pulse-dot"></span>${ICON_CHECK_SVG}<span>${t("questBadgeReady")}</span></span>`;
+        badgeHTML = `<span class="quest-tag ready">${t("questBadgeReady")}</span>`;
       } else if (quest.enrolled && !quest.completed) {
         const curM = formatMinSec(quest.progressSeconds);
         const totM = formatMinSec(quest.targetSeconds);
-        badgeHTML = `<span class="quest-pill in-progress" title="${t("bannerTagActive")}"><span class="quest-pulse-dot"></span>${ICON_TARGET_SVG}<span>${curM} / ${totM}</span></span>`;
-        footerExtra = `<span class="quest-rem-pill">${t("questRemShort", formatMinSec(quest.remainingSeconds))}</span>`;
+        badgeHTML = `<span class="quest-tag in-progress">${curM} / ${totM}</span>`;
       } else if (quest.claimed) {
-        badgeHTML = `<span class="quest-pill claimed" title="${t("questBadgeClaimed")}">${ICON_REWARD_SVG}<span>${t("questBadgeClaimed")}</span></span>`;
+        badgeHTML = `<span class="quest-tag claimed">${t("questBadgeClaimed")}</span>`;
       }
     }
 
     card.innerHTML = `
-      <div class="game-card-left">
-        <div class="game-header-row">
-          <div class="game-title">${game.title}</div>
-          ${badgeHTML}
-        </div>
-        <div class="game-footer-row">
-          <div class="game-exe-pill">${game.exe}</div>
-          ${footerExtra}
-        </div>
+      <div class="game-info">
+        <div class="game-title">${game.title}</div>
+        <div class="game-exe">${game.exe}</div>
       </div>
+      ${badgeHTML}
     `;
     card.onclick = () => selectGame(game);
     gamesListEl.appendChild(card);
   });
+}
+
+function updateActiveGameQuestBadge() {
+  if (!selectedGame) return;
+  const quest = matchedQuestsByGameId[selectedGame.id];
+
+  if (quest && quest.enrolled && !quest.completed) {
+    if (selectedGameQuestTag) {
+      selectedGameQuestTag.className = "quest-status-inline in-progress";
+      selectedGameQuestTag.textContent = `${formatMinSec(quest.progressSeconds)} / ${formatMinSec(quest.targetSeconds)}`;
+    }
+    if (selectedGameHint && !isRunning) {
+      const bufferSec = 15;
+      const recommended = Math.max(30, quest.remainingSeconds + bufferSec);
+      selectedGameHint.textContent = `• ${t("smartPreFillHint", formatMinSec(recommended))}`;
+    }
+  } else if (quest && quest.completed && !quest.claimed) {
+    if (selectedGameQuestTag) {
+      selectedGameQuestTag.className = "quest-status-inline ready";
+      selectedGameQuestTag.textContent = t("questBadgeReady");
+    }
+    if (selectedGameHint && !isRunning) {
+      selectedGameHint.textContent = `• ${t("readyToClaimHint")}`;
+    }
+  } else if (quest && quest.claimed) {
+    if (selectedGameQuestTag) {
+      selectedGameQuestTag.className = "quest-status-inline claimed";
+      selectedGameQuestTag.textContent = t("questBadgeClaimed");
+    }
+    if (selectedGameHint && !isRunning) {
+      selectedGameHint.textContent = "";
+    }
+  } else {
+    if (selectedGameQuestTag) {
+      selectedGameQuestTag.className = "quest-status-inline hidden";
+    }
+    if (selectedGameHint && !isRunning) {
+      selectedGameHint.textContent = "";
+    }
+  }
 }
 
 function selectGame(game) {
@@ -412,58 +400,31 @@ function selectGame(game) {
     const bufferSec = 15;
     const recommended = Math.max(30, quest.remainingSeconds + bufferSec);
     selectedDurationSeconds = recommended;
-
-    if (questSmartBanner) {
-      questSmartBanner.className = "quest-smart-banner";
-      bannerBadgeIcon.innerHTML = BANNER_TARGET_SVG;
-      bannerTitle.textContent = quest.questName || game.title;
-      bannerTag.textContent = t("bannerTagActive");
-      bannerDesc.textContent = t("bannerDescActive", formatMinSec(recommended));
-    }
-
     updateTimerUI(selectedDurationSeconds, selectedDurationSeconds);
     if (startBtnText) {
       startBtnText.textContent = t("startBtnRem", formatMinSec(selectedDurationSeconds));
     }
-  } else if (quest && quest.completed && !quest.claimed) {
-    selectedDurationSeconds = 15 * 60 + 15;
-    if (questSmartBanner) {
-      questSmartBanner.className = "quest-smart-banner ready";
-      bannerBadgeIcon.innerHTML = BANNER_CHECK_SVG;
-      bannerTitle.textContent = quest.questName || game.title;
-      bannerTag.textContent = t("bannerTagReady");
-      bannerDesc.textContent = t("bannerDescReady");
-    }
-    resetTimerUI();
-    if (startBtnText) startBtnText.textContent = t("startBtn");
   } else {
     selectedDurationSeconds = 15 * 60 + 15;
-    if (questSmartBanner) {
-      questSmartBanner.className = "quest-smart-banner hidden";
-    }
     resetTimerUI();
     if (startBtnText) startBtnText.textContent = t("startBtn");
   }
+
+  updateActiveGameQuestBadge();
 }
 
 function setupEventListeners() {
   // Lang Toggle
   if (langToggleBtn) {
     langToggleBtn.addEventListener("click", () => {
-      const next = currentLang === "ru" ? "en" : "ru";
+      const next = currentLang === "en" ? "ru" : "en";
       applyLanguage(next);
     });
   }
 
   // Search
-  searchInput.addEventListener("input", (e) => {
-    const q = e.target.value.toLowerCase().trim();
-    const filtered = allGames.filter(
-      (g) =>
-        g.title.toLowerCase().includes(q) ||
-        g.exe.toLowerCase().includes(q)
-    );
-    renderGames(filtered);
+  searchInput.addEventListener("input", () => {
+    renderGames(getFilteredGames());
   });
 
   // Sound Toggle
@@ -495,8 +456,8 @@ function setupEventListeners() {
     saveCustomGames(saved);
 
     allGames.push(custom);
-    gamesCountEl.textContent = allGames.length;
-    renderGames(allGames);
+    if (gamesCountEl) gamesCountEl.textContent = allGames.length;
+    renderGames(getFilteredGames());
     selectGame(custom);
     customExeInput.value = "";
     customTitleInput.value = "";
@@ -515,14 +476,9 @@ function setupEventListeners() {
   startBtn.addEventListener("click", startGame);
   stopBtn.addEventListener("click", stopGame);
 
-  // Sync Quests
-  if (syncQuestsBtn) {
-    syncQuestsBtn.addEventListener("click", () => fetchQuests(false));
-  }
-
-  // Auto-sync when window gains focus
+  // Auto-sync whenever window gains focus (even when running)
   window.addEventListener("focus", () => {
-    if (!isRunning) fetchQuests(true);
+    fetchQuests(true);
   });
 
   // Toast close
@@ -530,17 +486,18 @@ function setupEventListeners() {
     toastEl.classList.add("hidden");
   });
 
-  // Open Discord client
-  const openDiscord = async () => {
+  // Open Discord client directly to Quests tab
+  const openDiscord = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     try {
       await fetch("/api/open-discord", { method: "POST" });
-    } catch (e) {
-      console.error("Open discord error:", e);
+      setTimeout(() => fetchQuests(true), 2000);
+    } catch (err) {
+      console.error("Open discord error:", err);
     }
   };
 
-  const openDiscordBtn = document.getElementById("openDiscordBtn");
-  if (openDiscordBtn) openDiscordBtn.addEventListener("click", openDiscord);
+  if (openDiscordHeaderBtn) openDiscordHeaderBtn.addEventListener("click", openDiscord);
 }
 
 async function startGame() {
@@ -556,10 +513,10 @@ async function startGame() {
         exe: selectedGame.exe,
         windowTitle: selectedGame.windowTitle || selectedGame.title,
         steamFolder: selectedGame.steamFolder || "",
-        steamAppId: selectedGame.steamAppId || "",
-        discordAppId: selectedGame.discordAppId || "",
-        durationSeconds: selectedDurationSeconds || 915,
-      }),
+        steamAppId: selectedGame.steamAppId ? String(selectedGame.steamAppId) : "",
+        discordAppId: selectedGame.discordAppId ? String(selectedGame.discordAppId) : "",
+        durationSeconds: selectedDurationSeconds || 915
+      })
     });
 
     if (res.ok) {
@@ -575,12 +532,16 @@ async function startGame() {
 }
 
 async function stopGame() {
+  if (!isRunning) return;
+
   try {
-    await fetch("/api/stop", { method: "POST" });
-    setRunningState(false);
-    resetTimerUI();
+    const res = await fetch("/api/stop", { method: "POST" });
+    if (res.ok) {
+      setRunningState(false);
+      resetTimerUI();
+    }
   } catch (err) {
-    console.error("Stop error:", err);
+    showToast(t("toastConnErrTitle"), t("toastConnErrMsg") + err);
   }
 }
 
@@ -590,26 +551,19 @@ function setRunningState(running) {
   stopBtn.disabled = !running;
 
   if (running) {
-    if (brandLogo) {
-      brandLogo.classList.add("is-running");
-      brandLogo.classList.remove("is-completed");
-    }
+    if (brandLogo) brandLogo.classList.add("is-running");
     statusBadge.className = "status-indicator active";
     statusText.textContent = t("statusRunning");
     timerCaption.textContent = t("captionRunning", selectedGame ? selectedGame.exe : "");
     ringFill.classList.add("running");
     timerDigits.classList.add("running");
-    timerSub.textContent = t("timerSubRemaining");
   } else {
-    if (brandLogo) {
-      brandLogo.classList.remove("is-running");
-    }
+    if (brandLogo) brandLogo.classList.remove("is-running");
     statusBadge.className = "status-indicator";
     statusText.textContent = t("statusIdle");
     timerCaption.textContent = t("captionIdle");
     ringFill.classList.remove("running");
     timerDigits.classList.remove("running");
-    timerSub.textContent = t("timerSubTimer");
     if (statusInterval) {
       clearInterval(statusInterval);
       statusInterval = null;
@@ -619,11 +573,18 @@ function setRunningState(running) {
 
 function startPolling() {
   if (statusInterval) clearInterval(statusInterval);
+  pollCount = 0;
   statusInterval = setInterval(pollStatus, 1000);
 }
 
 async function pollStatus() {
   try {
+    pollCount++;
+    // Auto-refresh quest cache detection every 5 seconds while running
+    if (pollCount % 5 === 0) {
+      fetchQuests(true);
+    }
+
     const res = await fetch("/api/status");
     const data = await res.json();
 
@@ -668,30 +629,22 @@ function updateTimerUI(remaining, total) {
 
   const elapsed = total - remaining;
   const fraction = Math.min(1, Math.max(0, elapsed / total));
-  const percent = Math.round(fraction * 100);
-  timerPercent.textContent = `${percent}%`;
-
   const offset = CIRCUMFERENCE * (1 - fraction);
   ringFill.style.strokeDashoffset = offset;
 }
 
 function resetTimerUI() {
   timerDigits.textContent = "15:00";
-  timerPercent.textContent = "0%";
   ringFill.style.strokeDashoffset = CIRCUMFERENCE;
 }
 
 function onQuestCompleted() {
-  if (brandLogo) {
-    brandLogo.classList.remove("is-running");
-  }
+  if (brandLogo) brandLogo.classList.remove("is-running");
   timerDigits.textContent = "00:00";
-  timerPercent.textContent = "100%";
   ringFill.style.strokeDashoffset = 0;
   statusBadge.className = "status-indicator completed";
   statusText.textContent = t("statusCompleted");
   timerCaption.textContent = t("captionCompleted");
-  timerSub.textContent = t("timerSubCompleted");
 
   if (isSoundEnabled) {
     playChime();
@@ -700,7 +653,7 @@ function onQuestCompleted() {
   showToast(t("toastCompleteTitle"), t("toastCompleteMsg"));
 
   // Trigger auto refresh of Discord cache after completion
-  setTimeout(() => fetchQuests(true), 3500);
+  setTimeout(() => fetchQuests(true), 2500);
 }
 
 function showToast(title, message) {
@@ -709,7 +662,7 @@ function showToast(title, message) {
   toastEl.classList.remove("hidden");
   setTimeout(() => {
     toastEl.classList.add("hidden");
-  }, 7000);
+  }, 5000);
 }
 
 // Chime synthesized audio
