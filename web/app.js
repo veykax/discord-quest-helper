@@ -1,3 +1,80 @@
+// Localization Dictionaries
+const i18n = {
+  ru: {
+    langCode: "RU",
+    appSubtitle: "Эмуляция игровых процессов для наград Discord",
+    questProcesses: "Процессы квестов",
+    searchPlaceholder: "Поиск (Roblox, Call of Duty, RE7)...",
+    customProcess: "Пользовательский процесс",
+    customTitlePlaceholder: "Название (опционально)",
+    selectBtn: "Выбрать",
+    selectedGameLabel: "ТЕКУЩИЙ ВЫБОР",
+    statusIdle: "В ожидании",
+    statusRunning: "Эмуляция активна",
+    statusCompleted: "Выполнено",
+    timerSubTimer: "ТАЙМЕР",
+    timerSubRemaining: "ОСТАЛОСЬ",
+    timerSubCompleted: "РЕЗУЛЬТАТ",
+    captionIdle: "Выберите процесс и нажмите «Запустить эмуляцию»",
+    captionRunning: (exe) => `Discord видит процесс: ${exe}`,
+    captionCompleted: "15 минут истекли. Награда готова к получению в Discord!",
+    startBtn: "Запустить эмуляцию (15 мин)",
+    stopBtn: "Остановить",
+    hintText: "<strong>Подсказка:</strong> Запустите эмуляцию. Окно игры автоматически появится свёрнутым в панели задач. По истечении 15 минут прозвучит сигнал о награде.",
+    openDiscord: "Открыть клиент Discord",
+    toastCompleteTitle: "Квест завершен!",
+    toastCompleteMsg: "15 минут успешно завершены. Откройте Discord для получения награды.",
+    toastStoppedTitle: "Эмуляция остановлена",
+    toastStoppedMsg: "Окно игры было закрыто пользователем",
+    toastInputErrTitle: "Ошибка ввода",
+    toastInputErrMsg: "Укажите имя исполняемого файла процесса (.exe)",
+    toastSavedTitle: "Процесс сохранён",
+    toastSavedMsg: (exe) => `Процесс ${exe} добавлен в ваш список`,
+    soundTitle: "Звук по завершению",
+  },
+  en: {
+    langCode: "EN",
+    appSubtitle: "Game process emulator for Discord Quest rewards",
+    questProcesses: "Quest Processes",
+    searchPlaceholder: "Search (Roblox, Call of Duty, RE7)...",
+    customProcess: "Custom Process",
+    customTitlePlaceholder: "Title (optional)",
+    selectBtn: "Select",
+    selectedGameLabel: "SELECTED GAME",
+    statusIdle: "Idle",
+    statusRunning: "Emulating",
+    statusCompleted: "Completed",
+    timerSubTimer: "TIMER",
+    timerSubRemaining: "REMAINING",
+    timerSubCompleted: "COMPLETED",
+    captionIdle: "Select a process and click \"Start Quest\"",
+    captionRunning: (exe) => `Discord sees process: ${exe}`,
+    captionCompleted: "15 minutes elapsed. Reward is ready to claim in Discord!",
+    startBtn: "Start Quest (15 min)",
+    stopBtn: "Stop",
+    hintText: "<strong>Tip:</strong> Start emulation. The game window will launch minimized in the taskbar. After 15 minutes, a chime will notify you when rewards are ready.",
+    openDiscord: "Open Discord Client",
+    toastCompleteTitle: "Quest Completed!",
+    toastCompleteMsg: "15 minutes elapsed. Open Discord to claim your reward.",
+    toastStoppedTitle: "Emulation Stopped",
+    toastStoppedMsg: "Game simulation window was closed by the user",
+    toastInputErrTitle: "Input Error",
+    toastInputErrMsg: "Please specify an executable process name (.exe)",
+    toastSavedTitle: "Process Saved",
+    toastSavedMsg: (exe) => `Process ${exe} saved to your list`,
+    soundTitle: "Completion sound",
+  }
+};
+
+let currentLang = localStorage.getItem("dqh_lang") || (navigator.language && navigator.language.startsWith("ru") ? "ru" : "en");
+
+function t(key, arg) {
+  const dict = i18n[currentLang] || i18n.en;
+  const val = dict[key];
+  if (typeof val === "function") return val(arg);
+  return val !== undefined ? val : key;
+}
+
 // State
 let allGames = [];
 let selectedGame = null;
@@ -8,6 +85,15 @@ let isSoundEnabled = localStorage.getItem("dqh_sound") !== "false";
 const CIRCUMFERENCE = 2 * Math.PI * 82; // 515.22
 
 // Elements
+const appSubtitle = document.getElementById("appSubtitle");
+const questProcessesHeading = document.getElementById("questProcessesHeading");
+const customProcessHeading = document.getElementById("customProcessHeading");
+const selectedGameLabel = document.getElementById("selectedGameLabel");
+const startBtnText = document.getElementById("startBtnText");
+const stopBtnText = document.getElementById("stopBtnText");
+const infoTipText = document.getElementById("infoTipText");
+const openDiscordBtnText = document.getElementById("openDiscordBtnText");
+
 const gamesListEl = document.getElementById("gamesList");
 const gamesCountEl = document.getElementById("gamesCount");
 const searchInput = document.getElementById("searchInput");
@@ -27,6 +113,7 @@ const customExeInput = document.getElementById("customExeInput");
 const customTitleInput = document.getElementById("customTitleInput");
 const customSelectBtn = document.getElementById("customSelectBtn");
 
+const langToggleBtn = document.getElementById("langToggleBtn");
 const soundToggleBtn = document.getElementById("soundToggleBtn");
 const soundOnIcon = document.getElementById("soundOnIcon");
 const soundOffIcon = document.getElementById("soundOffIcon");
@@ -41,10 +128,41 @@ async function init() {
   ringFill.style.strokeDasharray = `${CIRCUMFERENCE}`;
   ringFill.style.strokeDashoffset = `${CIRCUMFERENCE}`;
 
+  applyLanguage(currentLang);
   updateSoundUI();
   await fetchGames();
   setupEventListeners();
   checkInitialStatus();
+}
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem("dqh_lang", lang);
+  const dict = i18n[lang] || i18n.en;
+
+  if (langToggleBtn) langToggleBtn.textContent = dict.langCode;
+  if (appSubtitle) appSubtitle.textContent = dict.appSubtitle;
+  if (questProcessesHeading) questProcessesHeading.textContent = dict.questProcesses;
+  if (searchInput) searchInput.placeholder = dict.searchPlaceholder;
+  if (customProcessHeading) customProcessHeading.textContent = dict.customProcess;
+  if (customTitleInput) customTitleInput.placeholder = dict.customTitlePlaceholder;
+  if (customSelectBtn) customSelectBtn.textContent = dict.selectBtn;
+  if (selectedGameLabel) selectedGameLabel.textContent = dict.selectedGameLabel;
+  if (startBtnText) startBtnText.textContent = dict.startBtn;
+  if (stopBtnText) stopBtnText.textContent = dict.stopBtn;
+  if (infoTipText) infoTipText.innerHTML = dict.hintText;
+  if (openDiscordBtnText) openDiscordBtnText.textContent = dict.openDiscord;
+  if (soundToggleBtn) soundToggleBtn.title = dict.soundTitle;
+
+  if (isRunning) {
+    statusText.textContent = dict.statusRunning;
+    timerSub.textContent = dict.timerSubRemaining;
+    timerCaption.textContent = dict.captionRunning(selectedGame ? selectedGame.exe : "");
+  } else {
+    statusText.textContent = dict.statusIdle;
+    timerSub.textContent = dict.timerSubTimer;
+    timerCaption.textContent = dict.captionIdle;
+  }
 }
 
 function updateSoundUI() {
@@ -111,7 +229,7 @@ function renderGames(games) {
         <div class="game-desc">${game.desc}</div>
         <div class="game-exe-pill">${game.exe}</div>
       </div>
-      <div class="game-badge">${game.badge || "Игра"}</div>
+      <div class="game-badge">${game.badge || "Quest"}</div>
     `;
     card.onclick = () => selectGame(game);
     gamesListEl.appendChild(card);
@@ -133,6 +251,14 @@ function selectGame(game) {
 }
 
 function setupEventListeners() {
+  // Lang Toggle
+  if (langToggleBtn) {
+    langToggleBtn.addEventListener("click", () => {
+      const next = currentLang === "ru" ? "en" : "ru";
+      applyLanguage(next);
+    });
+  }
+
   // Search
   searchInput.addEventListener("input", (e) => {
     const q = e.target.value.toLowerCase().trim();
@@ -155,22 +281,21 @@ function setupEventListeners() {
   // Custom game
   customSelectBtn.addEventListener("click", () => {
     const exe = customExeInput.value.trim();
-    const title = customTitleInput.value.trim() || "Свой процесс";
+    const title = customTitleInput.value.trim() || (currentLang === "ru" ? "Свой процесс" : "Custom Process");
     if (!exe) {
-      showToast("Ошибка ввода", "Укажите имя исполняемого файла процесса (.exe)");
+      showToast(t("toastInputErrTitle"), t("toastInputErrMsg"));
       return;
     }
     const cleanExe = exe.toLowerCase().endsWith(".exe") ? exe : `${exe}.exe`;
     const custom = {
       id: "custom_" + Date.now(),
       title: title,
-      desc: "Пользовательский процесс",
+      desc: currentLang === "ru" ? "Пользовательский процесс" : "Custom Process",
       exe: cleanExe,
       windowTitle: title,
       badge: "Custom",
     };
     
-    // Сохраняем в localStorage, чтобы игра не исчезала после перезапуска
     const saved = loadCustomGames();
     saved.push(custom);
     saveCustomGames(saved);
@@ -181,10 +306,10 @@ function setupEventListeners() {
     selectGame(custom);
     customExeInput.value = "";
     customTitleInput.value = "";
-    showToast("Процесс сохранён", `Процесс ${cleanExe} добавлен в ваш список`);
+    showToast(t("toastSavedTitle"), t("toastSavedMsg", cleanExe));
   });
 
-  // Быстрый поиск по нажатию клавиши '/'
+  // Hotkey '/' to focus search
   window.addEventListener("keydown", (e) => {
     if (e.key === "/" && document.activeElement !== searchInput && document.activeElement !== customExeInput && document.activeElement !== customTitleInput) {
       e.preventDefault();
@@ -201,7 +326,7 @@ function setupEventListeners() {
     toastEl.classList.add("hidden");
   });
 
-  // Открыть Discord через локальный бэкенд (без браузерной навигации)
+  // Open Discord client
   const openDiscord = async () => {
     try {
       await fetch("/api/open-discord", { method: "POST" });
@@ -236,10 +361,10 @@ async function startGame() {
       startPolling();
     } else {
       const errText = await res.text();
-      showToast("Ошибка запуска", errText);
+      showToast(currentLang === "ru" ? "Ошибка запуска" : "Launch Error", errText);
     }
   } catch (err) {
-    showToast("Ошибка связи", "Не удалось связаться с локальным сервисом: " + err);
+    showToast(currentLang === "ru" ? "Ошибка связи" : "Connection Error", String(err));
   }
 }
 
@@ -260,18 +385,18 @@ function setRunningState(running) {
 
   if (running) {
     statusBadge.className = "status-indicator active";
-    statusText.textContent = "Эмуляция активна";
-    timerCaption.textContent = `Discord видит процесс: ${selectedGame ? selectedGame.exe : ""}`;
+    statusText.textContent = t("statusRunning");
+    timerCaption.textContent = t("captionRunning", selectedGame ? selectedGame.exe : "");
     ringFill.classList.add("running");
     timerDigits.classList.add("running");
-    timerSub.textContent = "ОСТАЛОСЬ";
+    timerSub.textContent = t("timerSubRemaining");
   } else {
     statusBadge.className = "status-indicator";
-    statusText.textContent = "В ожидании";
-    timerCaption.textContent = "Выберите процесс и нажмите «Запустить эмуляцию»";
+    statusText.textContent = t("statusIdle");
+    timerCaption.textContent = t("captionIdle");
     ringFill.classList.remove("running");
     timerDigits.classList.remove("running");
-    timerSub.textContent = "ТАЙМЕР";
+    timerSub.textContent = t("timerSubTimer");
     if (statusInterval) {
       clearInterval(statusInterval);
       statusInterval = null;
@@ -295,7 +420,7 @@ async function pollStatus() {
         onQuestCompleted();
       } else {
         resetTimerUI();
-        showToast("Эмуляция остановлена", "Окно игры было закрыто пользователем");
+        showToast(t("toastStoppedTitle"), t("toastStoppedMsg"));
       }
       return;
     }
@@ -348,15 +473,15 @@ function onQuestCompleted() {
   timerPercent.textContent = "100%";
   ringFill.style.strokeDashoffset = 0;
   statusBadge.className = "status-indicator completed";
-  statusText.textContent = "Выполнено";
-  timerCaption.textContent = "15 минут истекли. Награда готова к получению в Discord!";
-  timerSub.textContent = "РЕЗУЛЬТАТ";
+  statusText.textContent = t("statusCompleted");
+  timerCaption.textContent = t("captionCompleted");
+  timerSub.textContent = t("timerSubCompleted");
 
   if (isSoundEnabled) {
     playChime();
   }
 
-  showToast("Квест завершен!", "15 минут успешно завершены. Откройте Discord для получения награды.");
+  showToast(t("toastCompleteTitle"), t("toastCompleteMsg"));
 }
 
 function showToast(title, message) {

@@ -19,12 +19,14 @@
         </div>
         <div class="brand-text">
           <h1>Discord Quest Helper</h1>
-          <p class="subtitle">Эмуляция игровых процессов для наград Discord</p>
+          <p class="subtitle" id="appSubtitle">Эмуляция игровых процессов для наград Discord</p>
         </div>
       </div>
       <div class="header-actions">
+        <!-- Кнопка переключения языка -->
+        <button class="lang-btn" id="langToggleBtn" title="Switch language" aria-label="Language">EN</button>
         <!-- Кнопка звука -->
-        <button class="icon-btn" id="soundToggleBtn" title="Звук по завершению" aria-label="Звук">
+        <button class="icon-btn" id="soundToggleBtn" title="Completion sound" aria-label="Звук">
           <svg id="soundOnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -44,7 +46,7 @@
       <section class="left-panel">
         <div class="panel-header">
           <div class="panel-title-row">
-            <h2>Процессы квестов</h2>
+            <h2 id="questProcessesHeading">Процессы квестов</h2>
             <span class="items-count" id="gamesCount">0</span>
           </div>
           <div class="search-bar">
@@ -68,7 +70,7 @@
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
-            <span>Пользовательский процесс</span>
+            <span id="customProcessHeading">Пользовательский процесс</span>
           </div>
           <div class="custom-inputs">
             <input type="text" id="customExeInput" placeholder="game.exe">
@@ -83,7 +85,7 @@
         <!-- Карточка выбранной игры -->
         <div class="active-game-card">
           <div class="active-game-info">
-            <span class="label">ТЕКУЩИЙ ВЫБОР</span>
+            <span class="label" id="selectedGameLabel">ТЕКУЩИЙ ВЫБОР</span>
             <h3 id="selectedGameTitle">Roblox</h3>
             <span class="process-tag" id="selectedGameExe">RobloxPlayerBeta.exe</span>
           </div>
@@ -119,13 +121,13 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <span>Запустить эмуляцию (15 мин)</span>
+            <span id="startBtnText">Запустить эмуляцию (15 мин)</span>
           </button>
           <button class="btn btn-danger" id="stopBtn" disabled>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <rect x="4" y="4" width="16" height="16" rx="2"></rect>
             </svg>
-            <span>Остановить</span>
+            <span id="stopBtnText">Остановить</span>
           </button>
         </div>
 
@@ -139,10 +141,10 @@
             </svg>
           </div>
           <div class="info-text">
-            <strong>Подсказка:</strong> Запустите эмуляцию. Окно игры автоматически появится свёрнутым в панели задач. По истечении 15 минут прозвучит сигнал о награде.
+            <span id="infoTipText"><strong>Подсказка:</strong> Запустите эмуляцию. Окно игры автоматически появится свёрнутым в панели задач. По истечении 15 минут прозвучит сигнал о награде.</span>
             <div class="discord-link-row">
               <button type="button" class="discord-open-link" id="openDiscordBtn">
-                <span>Открыть клиент Discord</span>
+                <span id="openDiscordBtnText">Открыть клиент Discord</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                   <polyline points="15 3 21 3 21 9"></polyline>

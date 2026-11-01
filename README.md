@@ -5,7 +5,7 @@
 <h1 align="center"><b>Discord Quest Helper</b></h1>
 
 <p align="center">
-  A lightweight, safe, and zero-dependency desktop utility to effortlessly complete <b>Discord Quests</b> (700 Orbs, avatar decorations, and rewards) without running heavy games.
+  A lightweight, safe, and zero-dependency utility to complete <b>Discord Quests</b> (700 Orbs, avatar decorations, and rewards) without running heavy games.
 </p>
 
 <p align="center">
@@ -25,6 +25,10 @@
   <img src="https://img.shields.io/badge/License-MIT-FEE75C?style=flat-square" alt="License" />
 </div>
 
+<p align="center">
+  <img src="assets/preview.png" alt="Discord Quest Helper Interface" width="820px" />
+</p>
+
 <h5 align="center">
   Leave a star if you find this project helpful! ⭐️
 </h5>
@@ -33,22 +37,22 @@
 
 ## About
 
-**Discord Quest Helper** is a standalone, cross-platform utility that emulates official game process signatures and top-level window titles required by Discord Quests. It allows you to claim quest rewards without having to download tens of gigabytes or run resource-heavy games.
+**Discord Quest Helper** is a standalone, cross-platform desktop application that emulates the process signatures and window titles required by Discord Quests. It lets you complete 15-minute game quests in the background without installing gigabytes of game data or consuming CPU and GPU resources.
 
-> [!IMPORTANT]
-> **Safety First:** This tool does **not** read, hook, or modify your Discord client, does not touch Discord memory, and never requests your user tokens or credentials. Emulation operates strictly via standard OS top-level window enumeration and Steam library manifests.
+> **Safety Notice:** This application does **not** read or modify Discord client files, does not touch Discord process memory, and never asks for user tokens or passwords. Emulation operates entirely through native top-level window titles and Steam library manifests.
 
 ---
 
 ## Features
 
-- **Zero Dependencies:** Compiles into a single standalone executable (~5.6 MB). Does not require Go, Python, Node.js, Electron, or external runtimes.
-- **Native Standalone Window:** Launches in an isolated, border-clean application window (Chromium App Mode) automatically centered on your display.
-- **Auto-Minimized Game Stubs:** Game simulation windows automatically launch minimized into the taskbar so they never interrupt your desktop work or gaming.
-- **Process Lifecycle Tracking:** Closing the game simulation window immediately halts the quest timer and resets the state.
-- **Steam & Subfolder Verification:** Supports advanced Discord detection rules, including subpath verification (`win64/`) and Steam library manifests (`appmanifest_*.acf` + `steam_appid.txt` for EA SPORTS FC 27).
-- **Custom Game Persistence:** Add any `.exe` for future quests; entries persist locally across application restarts.
-- **Audio & Toast Notifications:** Built-in chime sound and non-intrusive dark-mode toast alerts when the 15-minute quest completes.
+- **Zero Dependencies:** Compiles into a single standalone executable (~5.6 MB). Does not require Go, Python, Node.js, Electron, or browser extensions.
+- **Bilingual Interface:** Built-in instant language switcher (**English** and **Russian**) with preference persistence.
+- **Native Standalone Window:** Runs in an isolated, border-clean application window centered on your display with minimum size protection.
+- **Auto-Minimized Game Stubs:** Simulated game windows start automatically minimized in the taskbar so they never interrupt your work.
+- **Process Lifecycle Sync:** Closing the simulation window from your taskbar automatically halts the quest timer.
+- **Steam & Subpath Verification:** Supports relative directory paths (e.g., `win64/` for VALORANT) and Steam library manifests (`appmanifest_*.acf` + `steam_appid.txt` for EA SPORTS FC 27).
+- **Custom Game Support:** Add any custom `.exe` for future quests; entries persist locally across restarts.
+- **Audio & Toast Alerts:** Built-in chime sound and dark-mode toast alerts notify you when the quest timer completes.
 
 ---
 
@@ -74,13 +78,11 @@
 1. Open Discord, navigate to **User Settings $\rightarrow$ Quests**, and click **«Accept Quest»**.
 2. Download and run **`discord-quest-helper.exe`** from [**Releases**](https://github.com/veykax/discord-quest-helper/releases) (no installation required).
 3. Select your target game from the list.
-4. Click **«Запустить эмуляцию (15 мин)»**.
+4. Click **«Start Quest (15 min)»**.
 5. The game stub will run minimized in your taskbar.
 6. Once the 15-minute timer completes, claim your reward directly in Discord!
 
-> [!TIP]
-> **For EA SPORTS FC 27:**  
-> Discord detects FC 27 through Steam library integration. If Steam is already running, exit Steam completely from your system tray (*Right-click Steam tray icon $\rightarrow$ Exit*) and reopen it once so it registers the newly created game manifest.
+> **Tip for EA SPORTS FC 27:** Discord detects FC 27 through Steam library integration. If Steam is already running, exit Steam completely from your system tray (*Right-click Steam tray icon $\rightarrow$ Exit*) and reopen it once so it registers the newly created game manifest.
 
 ---
 
