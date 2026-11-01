@@ -23,6 +23,7 @@ type linuxManager struct {
 	ipcConn         net.Conn
 	currentName     string
 	currentExe      string
+	altExe          string
 	flatpakInstance string
 	currentManifest string
 	currentAppIdTxt string
@@ -178,6 +179,25 @@ func (m *linuxManager) Start(exeName, windowTitle, steamFolder, steamAppID, disc
 	_ = os.Chmod(targetPath, 0755)
 	m.currentExe = targetPath
 
+	if steamAppID != "" {
+		_ = os.WriteFile(filepath.Join(filepath.Dir(targetPath), "steam_appid.txt"), []byte(steamAppID), 0644)
+	}
+
+	// Alternate nested path copy if steamFolder provided (e.g. fc27.exe -> "EA SPORTS FC 27/fc27.exe")
+	if steamFolder != "" {
+		nestedPath := filepath.Join(targetDir, steamFolder, filepath.Base(exeName))
+		if nestedPath != targetPath {
+			_ = os.MkdirAll(filepath.Dir(nestedPath), 0755)
+			if err := copyFile(self, nestedPath); err == nil {
+				_ = os.Chmod(nestedPath, 0755)
+				m.altExe = nestedPath
+				if steamAppID != "" {
+					_ = os.WriteFile(filepath.Join(filepath.Dir(nestedPath), "steam_appid.txt"), []byte(steamAppID), 0644)
+				}
+			}
+		}
+	}
+
 	var cmd *exec.Cmd
 	display := os.Getenv("DISPLAY")
 	if display == "" {
@@ -251,7 +271,18 @@ func (m *linuxManager) stopUnlocked() error {
 		m.currentAppIdTxt = ""
 	}
 
+	if m.altExe != "" {
+		_ = os.Remove(filepath.Join(filepath.Dir(m.altExe), "steam_appid.txt"))
+		_ = os.Remove(m.altExe)
+		altParent := filepath.Dir(m.altExe)
+		if altParent != m.tempDir && !strings.Contains(altParent, "steamapps") && !strings.Contains(altParent, ".var/app/com.discordapp.Discord/cache") {
+			_ = os.Remove(altParent)
+		}
+		m.altExe = ""
+	}
+
 	if m.currentExe != "" {
+		_ = os.Remove(filepath.Join(filepath.Dir(m.currentExe), "steam_appid.txt"))
 		_ = os.Remove(m.currentExe)
 		parent := filepath.Dir(m.currentExe)
 		if parent != m.tempDir && !strings.Contains(parent, "steamapps") && !strings.Contains(parent, ".var/app/com.discordapp.Discord/cache") {

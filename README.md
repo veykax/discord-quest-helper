@@ -70,7 +70,7 @@ Includes verified quest signatures for popular titles:
 - **Arknights: Endfield** (`endfield.exe`)
 - **Firefox Browser** (`firefox.exe`)
 - **VALORANT** (`win64/VALORANT-Win64-Shipping.exe`)
-- **EA SPORTS FC Series** (`ea sports fc 25/fc25.exe`, `fc26.exe`, `fc27.exe`)
+- **EA SPORTS FC 27** (`fc27.exe`, Steam Integration)
 - **Custom Executables** (input any `.exe` and window title)
 
 ---
