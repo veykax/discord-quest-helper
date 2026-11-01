@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Quest Helper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Шапка приложения -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="discord-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Discord Quest Helper</h1>
+          <p class="subtitle">Легкая и безопасная эмуляция игр для квестов</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-accent">Go Edition</span>
+        <span class="badge badge-success">Zero Lag</span>
+      </div>
+    </header>
+
+    <!-- Основной контент: Две колонки -->
+    <main class="main-content">
+      <!-- Левая колонка: Выбор игры/процесса -->
+      <section class="left-panel">
+        <div class="panel-header">
+          <h2>Выберите игру (процесс)</h2>
+          <div class="search-bar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Поиск (Roblox, Call of Duty, RE7)...">
+          </div>
+        </div>
+
+        <!-- Список игр -->
+        <div class="games-list" id="gamesList">
+          <!-- Генерируется через JS -->
+        </div>
+
+        <!-- Блок своей игры -->
+        <div class="custom-game-card">
+          <div class="custom-card-header">
+            <span>✍️ Свой процесс (.exe)</span>
+          </div>
+          <div class="custom-inputs">
+            <input type="text" id="customExeInput" placeholder="Имя процесса (например: game.exe)">
+            <input type="text" id="customTitleInput" placeholder="Заголовок игры (например: My Game)">
+            <button class="btn btn-secondary btn-sm" id="customSelectBtn">Использовать этот</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Правая колонка: Таймер и управление -->
+      <section class="right-panel">
+        <!-- Карточка активной игры -->
+        <div class="active-game-card">
+          <div class="active-game-info">
+            <span class="label">ВЫБРАННАЯ ИГРА:</span>
+            <h3 id="selectedGameTitle">Roblox</h3>
+            <span class="process-tag" id="selectedGameExe">RobloxPlayerBeta.exe</span>
+          </div>
+          <div class="active-game-status">
+            <span class="status-indicator" id="statusBadge">Готов к запуску</span>
+          </div>
+        </div>
+
+        <!-- Круговой таймер -->
+        <div class="timer-card">
+          <div class="circular-progress">
+            <svg viewBox="0 0 200 200" class="progress-ring">
+              <circle class="ring-bg" cx="100" cy="100" r="82" />
+              <circle class="ring-fill" id="ringFill" cx="100" cy="100" r="82" />
+            </svg>
+            <div class="timer-center">
+              <span class="timer-digits" id="timerDigits">15:00</span>
+              <span class="timer-sub" id="timerSub">ТАЙМЕР</span>
+            </div>
+          </div>
+          <div class="timer-caption" id="timerCaption">
+            Нажмите «Запустить эмуляцию» для старта
+          </div>
+        </div>
+
+        <!-- Кнопки управления -->
+        <div class="controls-row">
+          <button class="btn btn-primary" id="startBtn">
+            <span>🚀 Запустить (15 мин)</span>
+          </button>
+          <button class="btn btn-danger" id="stopBtn" disabled>
+            <span>⏹ Остановить</span>
+          </button>
+        </div>
+
+        <!-- Подсказка -->
+        <div class="info-footer">
+          <div class="info-icon">💡</div>
+          <div class="info-text">
+            <strong>Инструкция:</strong> Нажмите <em>Accept Quest</em> в Discord, затем нажмите <em>Запустить</em> здесь. Откроется небольшое окно игры — сверните его, но не закрывайте. Через 15 минут звук оповестит о награде!
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

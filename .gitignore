@@ -1,0 +1,9 @@
+# Binaries
+*.exe
+discord-quest-helper
+discord-quest-helper.exe
+
+# OS & Editor
+.vscode/
+.idea/
+*.log
