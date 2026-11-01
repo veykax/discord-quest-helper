@@ -212,9 +212,6 @@ function setupEventListeners() {
 
   const openDiscordBtn = document.getElementById("openDiscordBtn");
   if (openDiscordBtn) openDiscordBtn.addEventListener("click", openDiscord);
-
-  const headerDiscordBtn = document.getElementById("headerDiscordBtn");
-  if (headerDiscordBtn) headerDiscordBtn.addEventListener("click", openDiscord);
 }
 
 async function startGame() {
@@ -294,7 +291,12 @@ async function pollStatus() {
 
     if (!data.running && isRunning) {
       setRunningState(false);
-      onQuestCompleted();
+      if (data.remaining <= 2) {
+        onQuestCompleted();
+      } else {
+        resetTimerUI();
+        showToast("Эмуляция остановлена", "Окно игры было закрыто пользователем");
+      }
       return;
     }
 

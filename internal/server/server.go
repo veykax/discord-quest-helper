@@ -149,7 +149,8 @@ func (s *AppServer) handleOpenDiscord(w http.ResponseWriter, r *http.Request) {
 
 	switch runtime.GOOS {
 	case "windows":
-		_ = exec.Command("cmd", "/c", "start", "discord://").Start()
+		// rundll32 не создает консольного окна cmd
+		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", "discord://").Start()
 	case "linux":
 		_ = exec.Command("xdg-open", "discord://").Start()
 	case "darwin":
@@ -167,6 +168,13 @@ func (s *AppServer) runTimer() {
 	for range ticker.C {
 		s.mu.Lock()
 		if !s.isRunning {
+			s.mu.Unlock()
+			return
+		}
+
+		// Если окно симуляции игры было закрыто пользователем — останавливаем квест
+		if !s.spoofer.IsRunning() {
+			s.isRunning = false
 			s.mu.Unlock()
 			return
 		}

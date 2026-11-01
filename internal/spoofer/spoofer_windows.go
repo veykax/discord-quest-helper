@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 type windowsManager struct {
@@ -27,7 +28,7 @@ func newPlatformManager() Manager {
 	os.MkdirAll(tDir, 0755)
 	return &windowsManager{
 		tempDir:  tDir,
-		baseStub: filepath.Join(tDir, "stub_base_v2.exe"),
+		baseStub: filepath.Join(tDir, "stub_base_v3.exe"),
 	}
 }
 
@@ -36,7 +37,7 @@ func (m *windowsManager) ensureStub() error {
 		return nil
 	}
 
-	// Исходник C# заглушки с видимым окном, запускающимся сразу свёрнутым
+	// Исходник C# заглушки с видимым окном, запускающимся строго свёрнутым
 	csSource := `using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -54,6 +55,12 @@ namespace DiscordGameStub {
                 MaximizeBox = false,
                 ShowInTaskbar = true,
                 WindowState = FormWindowState.Minimized
+            };
+            form.Load += delegate {
+                form.WindowState = FormWindowState.Minimized;
+            };
+            form.Shown += delegate {
+                form.WindowState = FormWindowState.Minimized;
             };
             Label lbl = new Label {
                 Text = title + "\n\n(Эмуляция для квеста Discord)",
@@ -81,6 +88,10 @@ namespace DiscordGameStub {
 			cmd := exec.Command(csc, "/nologo", "/target:winexe",
 				"/r:System.Windows.Forms.dll", "/r:System.Drawing.dll",
 				fmt.Sprintf("/out:%s", m.baseStub), csPath)
+			cmd.SysProcAttr = &syscall.SysProcAttr{
+				HideWindow:    true,
+				CreationFlags: 0x08000000, // CREATE_NO_WINDOW
+			}
 			if err := cmd.Run(); err == nil {
 				return nil
 			}
@@ -175,6 +186,18 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 
 	m.cmd = cmd
 	m.currentName = exeName
+
+	// Отслеживаем завершение процесса игры в фоне
+	go func() {
+		_ = cmd.Wait()
+		m.mu.Lock()
+		if m.cmd == cmd {
+			m.cmd = nil
+			m.currentName = ""
+		}
+		m.mu.Unlock()
+	}()
+
 	return nil
 }
 
