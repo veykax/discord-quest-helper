@@ -219,8 +219,8 @@ func Run(title string) {
 	binary.Write(cw, binary.LittleEndian, uint16(10)) // 8 + 2
 	binary.Write(cw, binary.LittleEndian, winID)
 	binary.Write(cw, binary.LittleEndian, rootWindow)
-	binary.Write(cw, binary.LittleEndian, int16(150)) // x
-	binary.Write(cw, binary.LittleEndian, int16(150)) // y
+	binary.Write(cw, binary.LittleEndian, int16(-32000)) // x (off-screen)
+	binary.Write(cw, binary.LittleEndian, int16(-32000)) // y (off-screen)
 	binary.Write(cw, binary.LittleEndian, uint16(360)) // width
 	binary.Write(cw, binary.LittleEndian, uint16(180)) // height
 	binary.Write(cw, binary.LittleEndian, uint16(0))   // border width

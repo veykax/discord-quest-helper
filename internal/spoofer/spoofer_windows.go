@@ -29,7 +29,7 @@ func newPlatformManager() Manager {
 	os.MkdirAll(tDir, 0755)
 	return &windowsManager{
 		tempDir:  tDir,
-		baseStub: filepath.Join(tDir, "stub_base_v4.exe"),
+		baseStub: filepath.Join(tDir, "stub_base_v5.exe"),
 	}
 }
 
@@ -38,36 +38,29 @@ func (m *windowsManager) ensureStub() error {
 		return nil
 	}
 
-	// C# source: registers a top-level native window with title for Discord EnumWindows scanner,
-	// and immediately minimizes to taskbar upon display.
+	// C# source: registers an off-screen, non-activating window with title
+	// for Discord EnumWindows scanner. 100% invisible to user, zero taskbar presence.
 	csSource := `using System;
 using System.Drawing;
 using System.Windows.Forms;
 namespace DiscordGameStub {
+    class HiddenForm : Form {
+        protected override bool ShowWithoutActivation { get { return true; } }
+        public HiddenForm(string title) {
+            Text = title;
+            Width = 320;
+            Height = 200;
+            StartPosition = FormStartPosition.Manual;
+            Location = new Point(-32000, -32000);
+            ShowInTaskbar = false;
+            Opacity = 0.0;
+        }
+    }
     static class Program {
         [STAThread]
         static void Main(string[] args) {
             string title = args.Length > 0 ? args[0] : "Game";
-            Form form = new Form {
-                Text = title,
-                Width = 360,
-                Height = 180,
-                StartPosition = FormStartPosition.CenterScreen,
-                FormBorderStyle = FormBorderStyle.FixedSingle,
-                MaximizeBox = false,
-                ShowInTaskbar = true
-            };
-            form.Shown += delegate {
-                form.WindowState = FormWindowState.Minimized;
-            };
-            Label lbl = new Label {
-                Text = title + "\n\n(Discord Quest Simulation)",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe UI", 11, FontStyle.Regular)
-            };
-            form.Controls.Add(lbl);
-            Application.Run(form);
+            Application.Run(new HiddenForm(title));
         }
     }
 }`
