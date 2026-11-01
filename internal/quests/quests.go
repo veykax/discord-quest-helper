@@ -105,6 +105,12 @@ func candidateDirs() []string {
 	case "windows":
 		appData := os.Getenv("APPDATA")
 		localAppData := os.Getenv("LOCALAPPDATA")
+		if appData == "" && home != "" {
+			appData = filepath.Join(home, "AppData", "Roaming")
+		}
+		if localAppData == "" && home != "" {
+			localAppData = filepath.Join(home, "AppData", "Local")
+		}
 		discordFlavors := []string{"discord", "discordcanary", "discordptb", "discorddevelopment"}
 
 		if appData != "" {
@@ -143,6 +149,19 @@ func candidateDirs() []string {
 			dirs = append(dirs, filepath.Join(home, "snap", "discord", "current", ".config", "discord", "Cache", "Cache_Data"))
 		}
 
+		// Also check WSL Windows mounts if running inside WSL environment
+		if _, err := os.Stat("/mnt/c/Users"); err == nil {
+			if wslMatches, err := filepath.Glob("/mnt/c/Users/*/AppData/Roaming/discord/Cache/Cache_Data"); err == nil {
+				dirs = append(dirs, wslMatches...)
+			}
+			if wslMatches, err := filepath.Glob("/mnt/c/Users/*/AppData/Roaming/discordcanary/Cache/Cache_Data"); err == nil {
+				dirs = append(dirs, wslMatches...)
+			}
+			if wslMatches, err := filepath.Glob("/mnt/c/Users/*/AppData/Roaming/discordptb/Cache/Cache_Data"); err == nil {
+				dirs = append(dirs, wslMatches...)
+			}
+		}
+
 	case "darwin":
 		if home != "" {
 			dirs = append(dirs, filepath.Join(home, "Library", "Application Support", "discord", "Cache", "Cache_Data"))
@@ -151,6 +170,46 @@ func candidateDirs() []string {
 	}
 
 	return dirs
+}
+
+// isQuestsCacheFile checks if a file is a valid Discord quests response payload
+// (either Chromium Simple Cache member or Blockfile external stream f_XXXXXX).
+func isQuestsCacheFile(filePath string) bool {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	buf := make([]byte, 1024)
+	n, err := f.Read(buf)
+	if n < 10 {
+		return false
+	}
+	buf = buf[:n]
+
+	// Check if uncompressed JSON
+	if bytes.Contains(buf, []byte("\"quests\"")) {
+		return true
+	}
+
+	// Check for gzip stream header
+	gzipHeader := []byte{0x1f, 0x8b, 0x08}
+	offset := bytes.Index(buf, gzipHeader)
+	if offset == -1 {
+		return false
+	}
+
+	zr, err := gzip.NewReader(bytes.NewReader(buf[offset:]))
+	if err != nil {
+		return false
+	}
+	defer zr.Close()
+	zr.Multistream(false)
+
+	dec := make([]byte, 2048)
+	dn, _ := zr.Read(dec)
+	return bytes.Contains(dec[:dn], []byte("\"quests\""))
 }
 
 // FindFreshestCacheFile locates the most recently updated quests cache file on disk.
@@ -166,12 +225,38 @@ func FindFreshestCacheFile() (string, time.Time, error) {
 
 	dirs := candidateDirs()
 	for _, dir := range dirs {
+		// 1. Direct match: Simple Cache (Linux Flatpak / native ~/.config / macOS)
 		p := filepath.Join(dir, cacheFileName)
-		fi, err := os.Stat(p)
-		if err == nil && !fi.IsDir() {
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
 			if fi.ModTime().After(bestMod) {
 				bestMod = fi.ModTime()
 				bestPath = p
+			}
+			continue
+		}
+
+		// 2. Scan for Blockfile Cache external files (f_XXXXXX), standard on Windows Electron
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasPrefix(entry.Name(), "f_") {
+				continue
+			}
+			fullPath := filepath.Join(dir, entry.Name())
+			fi, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			// Only inspect if it could be newer than our current best, or if we haven't found any yet
+			if bestPath == "" || fi.ModTime().After(bestMod) {
+				if isQuestsCacheFile(fullPath) {
+					bestMod = fi.ModTime()
+					bestPath = fullPath
+				}
 			}
 		}
 	}
