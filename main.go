@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
@@ -63,7 +64,7 @@ func main() {
 	// Открываем нативное окно приложения (App Mode)
 	go func() {
 		time.Sleep(150 * time.Millisecond)
-		launchNativeAppWindow(url)
+		launchNativeAppWindow(url, exitChan)
 	}()
 
 	// Обработка прерывания (Ctrl+C, закрытие)
@@ -86,44 +87,83 @@ func runStubMode() {
 	<-sigChan
 }
 
-func launchNativeAppWindow(url string) {
-	width := "880"
-	height := "640"
+func launchNativeAppWindow(url string, exitChan chan struct{}) {
+	width := "920"
+	height := "660"
 
 	switch runtime.GOOS {
 	case "windows":
-		// Пробуем запустить Edge в режиме Standalone App (без рамок браузера)
-		edgePaths := []string{
-			`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`,
-			`C:\Program Files\Microsoft\Edge\Application\msedge.exe`,
-			filepathJoin(os.Getenv("LOCALAPPDATA"), `Microsoft\Edge\Application\msedge.exe`),
-		}
-		for _, p := range edgePaths {
-			if _, err := os.Stat(p); err == nil {
-				appArg := fmt.Sprintf("--app=%s", url)
-				sizeArg := fmt.Sprintf("--window-size=%s,%s", width, height)
-				cmd := exec.Command(p, appArg, sizeArg)
-				if err := cmd.Start(); err == nil {
-					return
-				}
+		browserPath := findWindowsChromium()
+		if browserPath != "" {
+			profileDir := filepath.Join(os.TempDir(), "DiscordQuestHelper_AppProfile")
+			appArg := fmt.Sprintf("--app=%s", url)
+			sizeArg := fmt.Sprintf("--window-size=%s,%s", width, height)
+			profileArg := fmt.Sprintf("--user-data-dir=%s", profileDir)
+
+			cmd := exec.Command(browserPath,
+				appArg,
+				sizeArg,
+				profileArg,
+				"--no-first-run",
+				"--no-default-browser-check",
+				"--disable-features=Translate",
+			)
+
+			if err := cmd.Start(); err == nil {
+				// При закрытии окна пользователем - плавно закрываем приложение
+				go func() {
+					_ = cmd.Wait()
+					select {
+					case <-exitChan:
+					default:
+						close(exitChan)
+					}
+				}()
+				return
 			}
 		}
+
 		// Fallback: запуск в браузере по умолчанию
 		_ = exec.Command("cmd", "/c", "start", url).Start()
 
 	case "linux":
-		// Пробуем Chromium / Chrome в режиме App
-		browsers := []string{"google-chrome", "chromium", "chromium-browser", "brave"}
+		browsers := []string{
+			"google-chrome",
+			"google-chrome-stable",
+			"chromium",
+			"chromium-browser",
+			"brave-browser",
+			"microsoft-edge",
+			"vivaldi",
+		}
+		profileDir := filepath.Join(os.TempDir(), "DiscordQuestHelper_AppProfile")
+		appArg := fmt.Sprintf("--app=%s", url)
+		sizeArg := fmt.Sprintf("--window-size=%s,%s", width, height)
+		profileArg := fmt.Sprintf("--user-data-dir=%s", profileDir)
+
 		for _, b := range browsers {
 			if p, err := exec.LookPath(b); err == nil {
-				appArg := fmt.Sprintf("--app=%s", url)
-				sizeArg := fmt.Sprintf("--window-size=%s,%s", width, height)
-				cmd := exec.Command(p, appArg, sizeArg)
+				cmd := exec.Command(p,
+					appArg,
+					sizeArg,
+					profileArg,
+					"--no-first-run",
+					"--no-default-browser-check",
+				)
 				if err := cmd.Start(); err == nil {
+					go func() {
+						_ = cmd.Wait()
+						select {
+						case <-exitChan:
+						default:
+							close(exitChan)
+						}
+					}()
 					return
 				}
 			}
 		}
+
 		// Fallback: xdg-open
 		_ = exec.Command("xdg-open", url).Start()
 
@@ -132,14 +172,52 @@ func launchNativeAppWindow(url string) {
 	}
 }
 
-func filepathJoin(elem ...string) string {
-	res := ""
-	for i, e := range elem {
-		if i == 0 {
-			res = e
-		} else {
-			res = res + "\\" + e
+func findWindowsChromium() string {
+	localAppData := os.Getenv("LOCALAPPDATA")
+	progFiles := os.Getenv("ProgramFiles")
+	progFilesX86 := os.Getenv("ProgramFiles(x86)")
+
+	candidates := []string{
+		// 1. Google Chrome (наиболее надежный standalone app режим)
+		filepath.Join(localAppData, `Google\Chrome\Application\chrome.exe`),
+		filepath.Join(progFiles, `Google\Chrome\Application\chrome.exe`),
+		filepath.Join(progFilesX86, `Google\Chrome\Application\chrome.exe`),
+
+		// 2. Microsoft Edge
+		filepath.Join(progFilesX86, `Microsoft\Edge\Application\msedge.exe`),
+		filepath.Join(progFiles, `Microsoft\Edge\Application\msedge.exe`),
+		filepath.Join(localAppData, `Microsoft\Edge\Application\msedge.exe`),
+
+		// 3. Vivaldi
+		filepath.Join(localAppData, `Vivaldi\Application\vivaldi.exe`),
+		filepath.Join(progFiles, `Vivaldi\Application\vivaldi.exe`),
+		filepath.Join(progFilesX86, `Vivaldi\Application\vivaldi.exe`),
+
+		// 4. Brave
+		filepath.Join(localAppData, `BraveSoftware\Brave-Browser\Application\brave.exe`),
+		filepath.Join(progFiles, `BraveSoftware\Brave-Browser\Application\brave.exe`),
+
+		// 5. Opera
+		filepath.Join(localAppData, `Programs\Opera GX\opera.exe`),
+		filepath.Join(localAppData, `Programs\Opera\launcher.exe`),
+		filepath.Join(progFiles, `Opera\launcher.exe`),
+	}
+
+	for _, p := range candidates {
+		if p == "" {
+			continue
+		}
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			return p
 		}
 	}
-	return res
+
+	// Также проверяем в PATH
+	for _, name := range []string{"chrome.exe", "msedge.exe", "vivaldi.exe", "brave.exe"} {
+		if p, err := exec.LookPath(name); err == nil {
+			return p
+		}
+	}
+
+	return ""
 }

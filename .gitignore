@@ -1,4 +1,5 @@
-# Binaries
+# Binaries & Build Folder
+build/
 *.exe
 discord-quest-helper
 discord-quest-helper.exe
