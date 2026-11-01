@@ -145,6 +145,8 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 		_ = exec.Command("cmd", "/c", "start", url).Start()
 
 	case "linux":
+		ensureLinuxDesktopEntry()
+
 		browsers := []string{
 			"google-chrome",
 			"google-chrome-stable",
@@ -167,6 +169,8 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 					sizeArg,
 					posArg,
 					profileArg,
+					"--class=discord-quest-helper",
+					"--name=discord-quest-helper",
 					"--no-first-run",
 					"--no-default-browser-check",
 					"--disable-extensions",
@@ -210,6 +214,8 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 						sizeArg,
 						posArg,
 						profileArg,
+						"--class=discord-quest-helper",
+						"--name=discord-quest-helper",
 						"--no-first-run",
 						"--no-default-browser-check",
 						"--disable-extensions",
@@ -288,4 +294,31 @@ func findWindowsChromium() string {
 	}
 
 	return ""
+}
+
+func ensureLinuxDesktopEntry() {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	iconDir := filepath.Join(home, ".local", "share", "icons", "hicolor", "192x192", "apps")
+	_ = os.MkdirAll(iconDir, 0755)
+	iconPath := filepath.Join(iconDir, "discord-quest-helper.png")
+	if iconData, err := embeddedWebFS.ReadFile("web/icon-192.png"); err == nil {
+		_ = os.WriteFile(iconPath, iconData, 0644)
+	}
+
+	appDir := filepath.Join(home, ".local", "share", "applications")
+	_ = os.MkdirAll(appDir, 0755)
+	desktopPath := filepath.Join(appDir, "discord-quest-helper.desktop")
+	desktopContent := fmt.Sprintf(`[Desktop Entry]
+Type=Application
+Name=Discord Quest Helper
+Comment=Game process emulator for Discord Quest rewards
+Icon=%s
+StartupWMClass=discord-quest-helper
+Terminal=false
+Categories=Utility;
+`, iconPath)
+	_ = os.WriteFile(desktopPath, []byte(desktopContent), 0644)
 }

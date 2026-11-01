@@ -1,70 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' width='256' height='256' fill='none'>
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5865F2"/>
-      <stop offset="100%" stop-color="#3C45A5"/>
+    <linearGradient id='ghostGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='#5865F2'/>
+      <stop offset='100%' stop-color='#3C45A5'/>
     </linearGradient>
-    <linearGradient id="padGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E8EAED"/>
-    </linearGradient>
-    <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFF275"/>
-      <stop offset="100%" stop-color="#FEE75C"/>
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.3"/>
-    </filter>
   </defs>
 
-  <!-- Modern Rounded Squircle Badge -->
-  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#bgGrad)" filter="url(#shadow)"/>
+  <!-- Ghost Body -->
+  <path d='M 128 32
+           C 72 32 40 76 40 132
+           L 40 212
+           L 68 194
+           L 98 212
+           L 128 194
+           L 158 212
+           L 188 194
+           L 216 212
+           L 216 132
+           C 216 76 184 32 128 32 Z'
+        fill='url(#ghostGrad)'/>
 
-  <!-- Minimalist Gamepad Silhouette -->
-  <path d="M 72 82
-           C 46 82 28 102 28 128
-           C 28 156 38 196 48 214
-           C 56 228 76 232 90 220
-           L 110 202
-           C 115 198 121 196 128 196
-           C 135 196 141 198 146 202
-           L 166 220
-           C 180 232 200 228 208 214
-           C 218 196 228 156 228 128
-           C 228 108 218 92 200 84
-           C 190 84 180 82 170 82
-           C 152 82 142 88 128 88
-           C 114 88 104 82 72 82 Z"
-        fill="url(#padGrad)" filter="url(#shadow)"/>
+  <!-- Left Eye -->
+  <circle cx='96' cy='118' r='18' fill='#1e1f22'/>
+  <circle cx='102' cy='114' r='6' fill='#FFFFFF'/>
 
-  <!-- D-Pad (Left) -->
-  <rect x="68" y="120" width="16" height="42" rx="4" fill="#5865F2"/>
-  <rect x="55" y="133" width="42" height="16" rx="4" fill="#5865F2"/>
-  <circle cx="76" cy="141" r="3" fill="#FFFFFF" opacity="0.6"/>
-
-  <!-- Action Buttons (Right) -->
-  <circle cx="180" cy="126" r="7.5" fill="#5865F2"/>
-  <circle cx="166" cy="141" r="7.5" fill="#5865F2"/>
-  <circle cx="194" cy="141" r="7.5" fill="#5865F2"/>
-  <circle cx="180" cy="156" r="7.5" fill="#5865F2"/>
-
-  <!-- Center Status Gem -->
-  <rect x="121" y="137" width="14" height="6" rx="3" fill="#5865F2" opacity="0.6"/>
-
-  <!-- Radiant Quest Star (Sparkle) at top-right -->
-  <path d="M 200 32
-           Q 200 60 228 60
-           Q 200 60 200 88
-           Q 200 60 172 60
-           Q 200 60 200 32 Z"
-        fill="url(#starGrad)"/>
-  <circle cx="200" cy="60" r="4.5" fill="#FFFFFF"/>
-
-  <!-- Mini Accent Sparkle -->
-  <path d="M 160 40
-           Q 160 50 170 50
-           Q 160 50 160 60
-           Q 160 50 150 50
-           Q 160 50 160 40 Z"
-        fill="#FFF275" opacity="0.85"/>
+  <!-- Right Eye -->
+  <circle cx='160' cy='118' r='18' fill='#1e1f22'/>
+  <circle cx='166' cy='114' r='6' fill='#FFFFFF'/>
 </svg>
