@@ -105,6 +105,9 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 		return err
 	}
 
+	// Нормализуем путь для Windows
+	exeName = filepath.FromSlash(exeName)
+
 	if !strings.HasSuffix(strings.ToLower(exeName), ".exe") {
 		exeName += ".exe"
 	}
@@ -127,11 +130,13 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 				if steamAppID != "" {
 					steamApps := filepath.Dir(sCommon)
 					manifestPath := filepath.Join(steamApps, fmt.Sprintf("appmanifest_%s.acf", steamAppID))
-					if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
-						manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
-							steamAppID, windowTitle, steamFolder)
-						_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
-					}
+					manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
+						steamAppID, windowTitle, steamFolder)
+					_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
+
+					// Создаем steam_appid.txt прямо в папке игры
+					appIdFile := filepath.Join(targetDir, "steam_appid.txt")
+					_ = os.WriteFile(appIdFile, []byte(steamAppID), 0644)
 				}
 				break
 			}
@@ -139,20 +144,25 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 	}
 
 	targetPath := filepath.Join(targetDir, exeName)
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return err
+	}
+
 	if err := copyFile(m.baseStub, targetPath); err != nil {
 		return err
 	}
 	m.currentExe = targetPath
 
 	// Копия с альтернативным регистром
-	var altName string
-	if exeName == strings.ToLower(exeName) {
-		altName = strings.ToUpper(exeName)
+	baseName := filepath.Base(exeName)
+	var altBaseName string
+	if baseName == strings.ToLower(baseName) {
+		altBaseName = strings.ToUpper(baseName)
 	} else {
-		altName = strings.ToLower(exeName)
+		altBaseName = strings.ToLower(baseName)
 	}
-	if altName != exeName {
-		altPath := filepath.Join(targetDir, altName)
+	if altBaseName != baseName {
+		altPath := filepath.Join(filepath.Dir(targetPath), altBaseName)
 		_ = copyFile(m.baseStub, altPath)
 		m.altExe = altPath
 	}
@@ -182,6 +192,10 @@ func (m *windowsManager) stopUnlocked() error {
 
 	if m.currentExe != "" {
 		_ = os.Remove(m.currentExe)
+		parent := filepath.Dir(m.currentExe)
+		if parent != m.tempDir && !strings.Contains(strings.ToLower(parent), "steamapps") {
+			_ = os.Remove(parent)
+		}
 		m.currentExe = ""
 	}
 	if m.altExe != "" {

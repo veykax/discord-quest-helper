@@ -88,8 +88,8 @@ func runStubMode() {
 }
 
 func launchNativeAppWindow(url string, exitChan chan struct{}) {
-	width := "920"
-	height := "660"
+	width := "960"
+	height := "680"
 
 	switch runtime.GOOS {
 	case "windows":
