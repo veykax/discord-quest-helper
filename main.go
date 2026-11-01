@@ -106,7 +106,13 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 				profileArg,
 				"--no-first-run",
 				"--no-default-browser-check",
-				"--disable-features=Translate",
+				"--disable-extensions",
+				"--disable-sync",
+				"--disable-background-networking",
+				"--disable-component-update",
+				"--disable-default-apps",
+				"--renderer-process-limit=1",
+				"--disable-features=Translate,OptimizationHints,MediaRouter",
 			)
 
 			if err := cmd.Start(); err == nil {
@@ -149,6 +155,13 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 					profileArg,
 					"--no-first-run",
 					"--no-default-browser-check",
+					"--disable-extensions",
+					"--disable-sync",
+					"--disable-background-networking",
+					"--disable-component-update",
+					"--disable-default-apps",
+					"--renderer-process-limit=1",
+					"--disable-features=Translate,OptimizationHints,MediaRouter",
 				)
 				if err := cmd.Start(); err == nil {
 					go func() {
