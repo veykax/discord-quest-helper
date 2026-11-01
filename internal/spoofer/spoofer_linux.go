@@ -116,19 +116,22 @@ func (m *linuxManager) Start(exeName, windowTitle, steamFolder, steamAppID, disc
 	flatpakInst := findDiscordFlatpakInstance()
 	m.flatpakInstance = flatpakInst
 
-	targetDir := m.tempDir
+	targetDir := filepath.Join(m.tempDir, "games")
 	if flatpakInst != "" {
 		home, _ := os.UserHomeDir()
-		flatpakCache := filepath.Join(home, ".var/app/com.discordapp.Discord/cache")
-		if fi, err := os.Stat(flatpakCache); err == nil && fi.IsDir() {
-			targetDir = flatpakCache
-		}
+		flatpakCache := filepath.Join(home, ".var/app/com.discordapp.Discord/cache/games")
+		_ = os.MkdirAll(flatpakCache, 0755)
+		targetDir = flatpakCache
+	} else {
+		_ = os.MkdirAll(targetDir, 0755)
 	}
 
 	// Optional Steam common library integration
 	if steamFolder != "" {
 		home, _ := os.UserHomeDir()
 		steamCandidates := []string{
+			filepath.Join(home, ".var/app/com.discordapp.Discord/.local/share/Steam/steamapps"),
+			filepath.Join(home, ".var/app/com.discordapp.Discord/.steam/steam/steamapps"),
 			filepath.Join(home, ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"),
 			filepath.Join(home, ".local/share/Steam/steamapps"),
 			filepath.Join(home, ".steam/steam/steamapps"),
@@ -275,7 +278,7 @@ func (m *linuxManager) stopUnlocked() error {
 		_ = os.Remove(filepath.Join(filepath.Dir(m.altExe), "steam_appid.txt"))
 		_ = os.Remove(m.altExe)
 		altParent := filepath.Dir(m.altExe)
-		if altParent != m.tempDir && !strings.Contains(altParent, "steamapps") && !strings.Contains(altParent, ".var/app/com.discordapp.Discord/cache") {
+		if altParent != m.tempDir && !strings.Contains(altParent, "steamapps") && !strings.HasSuffix(altParent, "games") && !strings.Contains(altParent, ".var/app/com.discordapp.Discord/cache") {
 			_ = os.Remove(altParent)
 		}
 		m.altExe = ""
@@ -285,7 +288,7 @@ func (m *linuxManager) stopUnlocked() error {
 		_ = os.Remove(filepath.Join(filepath.Dir(m.currentExe), "steam_appid.txt"))
 		_ = os.Remove(m.currentExe)
 		parent := filepath.Dir(m.currentExe)
-		if parent != m.tempDir && !strings.Contains(parent, "steamapps") && !strings.Contains(parent, ".var/app/com.discordapp.Discord/cache") {
+		if parent != m.tempDir && !strings.Contains(parent, "steamapps") && !strings.HasSuffix(parent, "games") && !strings.Contains(parent, ".var/app/com.discordapp.Discord/cache") {
 			_ = os.Remove(parent)
 		}
 		m.currentExe = ""

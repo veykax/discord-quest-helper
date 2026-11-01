@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -91,7 +92,7 @@ func main() {
 func runStubMode() {
 	title := "Game"
 	if len(os.Args) > 2 {
-		title = os.Args[2]
+		title = strings.Join(os.Args[2:], " ")
 	}
 	stub.Run(title)
 }

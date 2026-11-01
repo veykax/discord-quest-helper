@@ -78,7 +78,7 @@ var SupportedGames = []GameItem{
 		ID:           "fc27",
 		Title:        "EA SPORTS FC 27",
 		ExeName:      "fc27.exe",
-		WindowTitle:  "EA SPORTS FC™ 27",
+		WindowTitle:  "EA Sports FC 27",
 		SteamFolder:  "EA SPORTS FC 27",
 		SteamAppID:   "4080220",
 		DiscordAppID: "1531874756096295054",
