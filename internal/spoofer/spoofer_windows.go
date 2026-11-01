@@ -14,13 +14,14 @@ import (
 )
 
 type windowsManager struct {
-	mu          sync.Mutex
-	cmd         *exec.Cmd
-	currentName string
-	currentExe  string
-	altExe      string
-	tempDir     string
-	baseStub    string
+	mu              sync.Mutex
+	cmd             *exec.Cmd
+	currentName     string
+	currentExe      string
+	altExe          string
+	currentManifest string
+	tempDir         string
+	baseStub        string
 }
 
 func newPlatformManager() Manager {
@@ -28,7 +29,7 @@ func newPlatformManager() Manager {
 	os.MkdirAll(tDir, 0755)
 	return &windowsManager{
 		tempDir:  tDir,
-		baseStub: filepath.Join(tDir, "stub_base_v3.exe"),
+		baseStub: filepath.Join(tDir, "stub_base_v4.exe"),
 	}
 }
 
@@ -37,7 +38,8 @@ func (m *windowsManager) ensureStub() error {
 		return nil
 	}
 
-	// Исходник C# заглушки с видимым окном, запускающимся строго свёрнутым
+	// C# source: registers a top-level native window with title for Discord EnumWindows scanner,
+	// and immediately minimizes to taskbar upon display.
 	csSource := `using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -53,17 +55,13 @@ namespace DiscordGameStub {
                 StartPosition = FormStartPosition.CenterScreen,
                 FormBorderStyle = FormBorderStyle.FixedSingle,
                 MaximizeBox = false,
-                ShowInTaskbar = true,
-                WindowState = FormWindowState.Minimized
-            };
-            form.Load += delegate {
-                form.WindowState = FormWindowState.Minimized;
+                ShowInTaskbar = true
             };
             form.Shown += delegate {
                 form.WindowState = FormWindowState.Minimized;
             };
             Label lbl = new Label {
-                Text = title + "\n\n(Эмуляция для квеста Discord)",
+                Text = title + "\n\n(Discord Quest Simulation)",
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = new Font("Segoe UI", 11, FontStyle.Regular)
@@ -98,7 +96,7 @@ namespace DiscordGameStub {
 		}
 	}
 
-	// Fallback: копируем сам текущий исполняемый файл
+	// Fallback: copy current executable
 	self, err := os.Executable()
 	if err == nil {
 		return copyFile(self, m.baseStub)
@@ -117,7 +115,7 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 		return err
 	}
 
-	// Нормализуем путь для Windows
+	// Normalize Windows path
 	exeName = filepath.FromSlash(exeName)
 
 	if !strings.HasSuffix(strings.ToLower(exeName), ".exe") {
@@ -126,14 +124,14 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 
 	targetDir := m.tempDir
 
-	// Проверяем Steam-директорию
-	steamCandidates := []string{
-		`C:\Program Files (x86)\Steam\steamapps\common`,
-		`C:\Program Files\Steam\steamapps\common`,
-	}
+	// Optional Steam common library check
+	if steamFolder != "" {
+		steamCandidates := []string{
+			`C:\Program Files (x86)\Steam\steamapps\common`,
+			`C:\Program Files\Steam\steamapps\common`,
+		}
 
-	for _, sCommon := range steamCandidates {
-		if steamFolder != "" {
+		for _, sCommon := range steamCandidates {
 			if _, err := os.Stat(sCommon); err == nil {
 				gameDir := filepath.Join(sCommon, steamFolder)
 				os.MkdirAll(gameDir, 0755)
@@ -145,8 +143,8 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 					manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
 						steamAppID, windowTitle, steamFolder)
 					_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
+					m.currentManifest = manifestPath
 
-					// Создаем steam_appid.txt прямо в папке игры
 					appIdFile := filepath.Join(targetDir, "steam_appid.txt")
 					_ = os.WriteFile(appIdFile, []byte(steamAppID), 0644)
 				}
@@ -165,7 +163,7 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 	}
 	m.currentExe = targetPath
 
-	// Копия с альтернативным регистром
+	// Alternate case copy
 	baseName := filepath.Base(exeName)
 	var altBaseName string
 	if baseName == strings.ToLower(baseName) {
@@ -187,7 +185,7 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 	m.cmd = cmd
 	m.currentName = exeName
 
-	// Отслеживаем завершение процесса игры в фоне
+	// Track process lifecycle in background
 	go func() {
 		_ = cmd.Wait()
 		m.mu.Lock()
@@ -214,9 +212,15 @@ func (m *windowsManager) stopUnlocked() error {
 		m.cmd = nil
 	}
 
+	if m.currentManifest != "" {
+		_ = os.Remove(m.currentManifest)
+		m.currentManifest = ""
+	}
+
 	if m.currentExe != "" {
 		_ = os.Remove(m.currentExe)
 		parent := filepath.Dir(m.currentExe)
+		_ = os.Remove(filepath.Join(parent, "steam_appid.txt"))
 		if parent != m.tempDir && !strings.Contains(strings.ToLower(parent), "steamapps") {
 			_ = os.Remove(parent)
 		}

@@ -247,9 +247,8 @@ html, body {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 9px 13px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -272,35 +271,21 @@ html, body {
 .game-card-left {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  width: 100%;
 }
 
 .game-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-}
-
-.game-desc {
-  font-size: 11px;
-  color: var(--text-muted);
+  line-height: 1.25;
 }
 
 .game-exe-pill {
   font-family: Consolas, monospace;
   font-size: 11px;
   color: var(--green-bright);
-  margin-top: 2px;
-}
-
-.game-badge {
-  font-size: 10.5px;
-  font-weight: 600;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  padding: 3px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
 }
 
 /* Custom Game Card */

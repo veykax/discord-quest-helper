@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"discord-quest-helper/internal/screen"
 	"discord-quest-helper/internal/server"
 	"discord-quest-helper/internal/spoofer"
 )
@@ -90,7 +91,7 @@ func runStubMode() {
 func launchNativeAppWindow(url string, exitChan chan struct{}) {
 	width := 960
 	height := 680
-	posX, posY := getScreenCenter(width, height)
+	posX, posY := screen.GetCenter(width, height)
 
 	switch runtime.GOOS {
 	case "windows":

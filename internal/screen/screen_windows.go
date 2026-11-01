@@ -1,10 +1,11 @@
 //go:build windows
 
-package main
+package screen
 
 import "syscall"
 
-func getScreenCenter(w, h int) (int, int) {
+// GetCenter returns the centered (x, y) coordinates for a window of size (w, h).
+func GetCenter(w, h int) (int, int) {
 	user32 := syscall.NewLazyDLL("user32.dll")
 	procMetrics := user32.NewProc("GetSystemMetrics")
 	screenWidth, _, _ := procMetrics.Call(0)  // SM_CXSCREEN

@@ -46,30 +46,12 @@
 ## Features
 
 - **Zero Dependencies:** Compiles into a single standalone executable (~5.6 MB). Does not require Go, Python, Node.js, Electron, or browser extensions.
-- **Bilingual Interface:** Built-in instant language switcher (**English** and **Russian**) with preference persistence.
 - **Native Standalone Window:** Runs in an isolated, border-clean application window centered on your display with minimum size protection.
 - **Auto-Minimized Game Stubs:** Simulated game windows start automatically minimized in the taskbar so they never interrupt your work.
 - **Process Lifecycle Sync:** Closing the simulation window from your taskbar automatically halts the quest timer.
 - **Steam & Subpath Verification:** Supports relative directory paths (e.g., `win64/` for VALORANT) and Steam library manifests (`appmanifest_*.acf` + `steam_appid.txt` for EA SPORTS FC 27).
 - **Custom Game Support:** Add any custom `.exe` for future quests; entries persist locally across restarts.
 - **Audio & Toast Alerts:** Built-in chime sound and dark-mode toast alerts notify you when the quest timer completes.
-
----
-
-## Supported Games
-
-| Game | Simulated Process | Reward | Verification Mode |
-| :--- | :--- | :--- | :--- |
-| **Roblox** | `RobloxPlayerBeta.exe` | 700 Orbs | Native Executable & Window |
-| **Call of Duty: MW4** | `cod26-cod.exe` | 700 Orbs, 2XP Token, Calling Card | Native Executable Signature |
-| **Resident Evil Sale** | `re7.exe` | 700 Orbs | Steam Common Directory |
-| **Once Human** | `once_human.exe` | 700 Orbs | Directory Hierarchy Match |
-| **Where Winds Meet** | `wwm.exe` | 700 Orbs | Top-level Window Match |
-| **Arknights: Endfield** | `endfield.exe` | 700 Orbs | Steam AppID & Manifest |
-| **Firefox Browser** | `firefox.exe` | 700 Orbs | Native Browser Process |
-| **VALORANT** | `win64\VALORANT-Win64-Shipping.exe` | Avatar Decoration | Subfolder Relative Path |
-| **EA SPORTS FC 27** | `fc27.exe` | 700 Orbs | Steam SKU `4080220` Integration |
-| **Custom Process** | *User-defined (.exe)* | Any Future Quest | Local persistence |
 
 ---
 

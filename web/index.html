@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Шапка приложения -->
+    <!-- Header -->
     <header class="app-header">
       <div class="header-brand">
         <div class="discord-logo">
@@ -19,14 +19,14 @@
         </div>
         <div class="brand-text">
           <h1>Discord Quest Helper</h1>
-          <p class="subtitle" id="appSubtitle">Эмуляция игровых процессов для наград Discord</p>
+          <p class="subtitle" id="appSubtitle">Game process emulator for Discord Quest rewards</p>
         </div>
       </div>
       <div class="header-actions">
-        <!-- Кнопка переключения языка -->
+        <!-- Language Switcher -->
         <button class="lang-btn" id="langToggleBtn" title="Switch language" aria-label="Language">EN</button>
-        <!-- Кнопка звука -->
-        <button class="icon-btn" id="soundToggleBtn" title="Completion sound" aria-label="Звук">
+        <!-- Sound Toggle -->
+        <button class="icon-btn" id="soundToggleBtn" title="Completion sound" aria-label="Sound">
           <svg id="soundOnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -40,13 +40,13 @@
       </div>
     </header>
 
-    <!-- Основной контент -->
+    <!-- Main Content -->
     <main class="main-content">
-      <!-- Левая колонка: Список процессов / поиск -->
+      <!-- Left Column: Games list & custom process -->
       <section class="left-panel">
         <div class="panel-header">
           <div class="panel-title-row">
-            <h2 id="questProcessesHeading">Процессы квестов</h2>
+            <h2 id="questProcessesHeading">Quest Processes</h2>
             <span class="items-count" id="gamesCount">0</span>
           </div>
           <div class="search-bar">
@@ -54,50 +54,48 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="searchInput" placeholder="Поиск (Roblox, Call of Duty, RE7)...">
+            <input type="text" id="searchInput" placeholder="Search (Roblox, Call of Duty, RE7)...">
           </div>
         </div>
 
-        <!-- Список поддерживаемых игр -->
-        <div class="games-list" id="gamesList">
-          <!-- Генерируется через JS -->
-        </div>
+        <!-- Games List -->
+        <div class="games-list" id="gamesList"></div>
 
-        <!-- Блок добавления своего процесса -->
+        <!-- Custom Process Card -->
         <div class="custom-game-card">
           <div class="custom-card-header">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
-            <span id="customProcessHeading">Пользовательский процесс</span>
+            <span id="customProcessHeading">Custom Process</span>
           </div>
           <div class="custom-inputs">
             <input type="text" id="customExeInput" placeholder="game.exe">
-            <input type="text" id="customTitleInput" placeholder="Название (опционально)">
-            <button class="btn btn-secondary btn-sm" id="customSelectBtn">Выбрать</button>
+            <input type="text" id="customTitleInput" placeholder="Title (optional)">
+            <button class="btn btn-secondary btn-sm" id="customSelectBtn">Select</button>
           </div>
         </div>
       </section>
 
-      <!-- Правая колонка: Состояние и таймер -->
+      <!-- Right Column: Status & Timer -->
       <section class="right-panel">
-        <!-- Карточка выбранной игры -->
+        <!-- Selected Game Card -->
         <div class="active-game-card">
           <div class="active-game-info">
-            <span class="label" id="selectedGameLabel">ТЕКУЩИЙ ВЫБОР</span>
+            <span class="label" id="selectedGameLabel">SELECTED GAME</span>
             <h3 id="selectedGameTitle">Roblox</h3>
             <span class="process-tag" id="selectedGameExe">RobloxPlayerBeta.exe</span>
           </div>
           <div class="active-game-status">
             <span class="status-indicator" id="statusBadge">
               <span class="status-dot"></span>
-              <span id="statusText">В ожидании</span>
+              <span id="statusText">Idle</span>
             </span>
           </div>
         </div>
 
-        <!-- Круговой таймер -->
+        <!-- Circular Timer -->
         <div class="timer-card">
           <div class="circular-progress">
             <svg viewBox="0 0 200 200" class="progress-ring">
@@ -106,32 +104,32 @@
             </svg>
             <div class="timer-center">
               <span class="timer-digits" id="timerDigits">15:00</span>
-              <span class="timer-sub" id="timerSub">ТАЙМЕР</span>
+              <span class="timer-sub" id="timerSub">TIMER</span>
               <span class="timer-percent" id="timerPercent">0%</span>
             </div>
           </div>
           <div class="timer-caption" id="timerCaption">
-            Выберите процесс и нажмите «Запустить эмуляцию»
+            Select a process and click "Start Quest"
           </div>
         </div>
 
-        <!-- Кнопки управления -->
+        <!-- Controls -->
         <div class="controls-row">
           <button class="btn btn-primary" id="startBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
-            <span id="startBtnText">Запустить эмуляцию (15 мин)</span>
+            <span id="startBtnText">Start Quest (15 min)</span>
           </button>
           <button class="btn btn-danger" id="stopBtn" disabled>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <rect x="4" y="4" width="16" height="16" rx="2"></rect>
             </svg>
-            <span id="stopBtnText">Остановить</span>
+            <span id="stopBtnText">Stop</span>
           </button>
         </div>
 
-        <!-- Информационная подсказка -->
+        <!-- Tip Footer -->
         <div class="info-footer">
           <div class="info-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -141,10 +139,10 @@
             </svg>
           </div>
           <div class="info-text">
-            <span id="infoTipText"><strong>Подсказка:</strong> Запустите эмуляцию. Окно игры автоматически появится свёрнутым в панели задач. По истечении 15 минут прозвучит сигнал о награде.</span>
+            <span id="infoTipText"><strong>Tip:</strong> Start emulation. The game window will launch minimized in the taskbar. After 15 minutes, a chime will notify you when rewards are ready.</span>
             <div class="discord-link-row">
               <button type="button" class="discord-open-link" id="openDiscordBtn">
-                <span id="openDiscordBtnText">Открыть клиент Discord</span>
+                <span id="openDiscordBtnText">Open Discord Client</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                   <polyline points="15 3 21 3 21 9"></polyline>
@@ -157,7 +155,7 @@
       </section>
     </main>
 
-    <!-- Всплывающее красивое уведомление (Toast) вместо alert -->
+    <!-- Toast Notification -->
     <div class="toast hidden" id="toast">
       <div class="toast-icon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -166,8 +164,8 @@
         </svg>
       </div>
       <div class="toast-body">
-        <div class="toast-title" id="toastTitle">Квест завершен</div>
-        <div class="toast-msg" id="toastMsg">15 минут истекли. Награда готова к получению в Discord!</div>
+        <div class="toast-title" id="toastTitle">Quest Completed!</div>
+        <div class="toast-msg" id="toastMsg">15 minutes elapsed. Open Discord to claim your reward.</div>
       </div>
       <button class="toast-close" id="toastCloseBtn">&times;</button>
     </div>

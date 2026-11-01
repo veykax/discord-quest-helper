@@ -20,7 +20,7 @@ const i18n = {
     captionCompleted: "15 минут истекли. Награда готова к получению в Discord!",
     startBtn: "Запустить эмуляцию (15 мин)",
     stopBtn: "Остановить",
-    hintText: "<strong>Подсказка:</strong> Запустите эмуляцию. Окно игры автоматически появится свёрнутым в панели задач. По истечении 15 минут прозвучит сигнал о награде.",
+    hintText: "<strong>Подсказка:</strong> Запустите эмуляцию. Окно игры появится свёрнутым в панели задач. Через 15 минут прозвучит сигнал о награде.",
     openDiscord: "Открыть клиент Discord",
     toastCompleteTitle: "Квест завершен!",
     toastCompleteMsg: "15 минут успешно завершены. Откройте Discord для получения награды.",
@@ -30,6 +30,9 @@ const i18n = {
     toastInputErrMsg: "Укажите имя исполняемого файла процесса (.exe)",
     toastSavedTitle: "Процесс сохранён",
     toastSavedMsg: (exe) => `Процесс ${exe} добавлен в ваш список`,
+    toastLaunchErrTitle: "Ошибка запуска",
+    toastConnErrTitle: "Ошибка связи",
+    toastConnErrMsg: "Не удалось связаться с локальным сервисом: ",
     soundTitle: "Звук по завершению",
   },
   en: {
@@ -46,7 +49,7 @@ const i18n = {
     statusCompleted: "Completed",
     timerSubTimer: "TIMER",
     timerSubRemaining: "REMAINING",
-    timerSubCompleted: "COMPLETED",
+    timerSubCompleted: "RESULT",
     captionIdle: "Select a process and click \"Start Quest\"",
     captionRunning: (exe) => `Discord sees process: ${exe}`,
     captionCompleted: "15 minutes elapsed. Reward is ready to claim in Discord!",
@@ -62,11 +65,14 @@ const i18n = {
     toastInputErrMsg: "Please specify an executable process name (.exe)",
     toastSavedTitle: "Process Saved",
     toastSavedMsg: (exe) => `Process ${exe} saved to your list`,
+    toastLaunchErrTitle: "Launch Error",
+    toastConnErrTitle: "Connection Error",
+    toastConnErrMsg: "Failed to communicate with local service: ",
     soundTitle: "Completion sound",
   }
 };
 
-let currentLang = localStorage.getItem("dqh_lang") || (navigator.language && navigator.language.startsWith("ru") ? "ru" : "en");
+let currentLang = localStorage.getItem("dqh_lang") || "en";
 
 function t(key, arg) {
   const dict = i18n[currentLang] || i18n.en;
@@ -138,6 +144,7 @@ async function init() {
 function applyLanguage(lang) {
   currentLang = lang;
   localStorage.setItem("dqh_lang", lang);
+  document.documentElement.lang = lang;
   const dict = i18n[lang] || i18n.en;
 
   if (langToggleBtn) langToggleBtn.textContent = dict.langCode;
@@ -175,7 +182,7 @@ function updateSoundUI() {
   }
 }
 
-// Ограничение минимального размера окна
+// Window size clamp
 const MIN_WINDOW_WIDTH = 840;
 const MIN_WINDOW_HEIGHT = 580;
 
@@ -226,10 +233,8 @@ function renderGames(games) {
     card.innerHTML = `
       <div class="game-card-left">
         <div class="game-title">${game.title}</div>
-        <div class="game-desc">${game.desc}</div>
         <div class="game-exe-pill">${game.exe}</div>
       </div>
-      <div class="game-badge">${game.badge || "Quest"}</div>
     `;
     card.onclick = () => selectGame(game);
     gamesListEl.appendChild(card);
@@ -245,7 +250,7 @@ function selectGame(game) {
   document.querySelectorAll(".game-card").forEach((c) => c.classList.remove("active"));
   const cards = Array.from(document.querySelectorAll(".game-card"));
   const activeCard = cards.find(
-    (c) => c.querySelector(".game-title").textContent === game.title
+    (c) => c.querySelector(".game-title") && c.querySelector(".game-title").textContent === game.title
   );
   if (activeCard) activeCard.classList.add("active");
 }
@@ -265,7 +270,6 @@ function setupEventListeners() {
     const filtered = allGames.filter(
       (g) =>
         g.title.toLowerCase().includes(q) ||
-        g.desc.toLowerCase().includes(q) ||
         g.exe.toLowerCase().includes(q)
     );
     renderGames(filtered);
@@ -281,7 +285,8 @@ function setupEventListeners() {
   // Custom game
   customSelectBtn.addEventListener("click", () => {
     const exe = customExeInput.value.trim();
-    const title = customTitleInput.value.trim() || (currentLang === "ru" ? "Свой процесс" : "Custom Process");
+    const defaultTitle = currentLang === "ru" ? "Свой процесс" : "Custom Process";
+    const title = customTitleInput.value.trim() || defaultTitle;
     if (!exe) {
       showToast(t("toastInputErrTitle"), t("toastInputErrMsg"));
       return;
@@ -290,10 +295,8 @@ function setupEventListeners() {
     const custom = {
       id: "custom_" + Date.now(),
       title: title,
-      desc: currentLang === "ru" ? "Пользовательский процесс" : "Custom Process",
       exe: cleanExe,
       windowTitle: title,
-      badge: "Custom",
     };
     
     const saved = loadCustomGames();
@@ -361,10 +364,10 @@ async function startGame() {
       startPolling();
     } else {
       const errText = await res.text();
-      showToast(currentLang === "ru" ? "Ошибка запуска" : "Launch Error", errText);
+      showToast(t("toastLaunchErrTitle"), errText);
     }
   } catch (err) {
-    showToast(currentLang === "ru" ? "Ошибка связи" : "Connection Error", String(err));
+    showToast(t("toastConnErrTitle"), t("toastConnErrMsg") + err);
   }
 }
 
@@ -493,7 +496,7 @@ function showToast(title, message) {
   }, 7000);
 }
 
-// Приятный синтетический звук завершения через Web Audio API
+// Chime synthesized audio
 function playChime() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
