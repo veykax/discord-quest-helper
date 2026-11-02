@@ -64,7 +64,6 @@
 Includes verified quest signatures for popular titles:
 
 - **Roblox** (`RobloxPlayerBeta.exe`)
-- **Apex Legends** (`r5apex.exe`, Steam Integration)
 - **Once Human** (`once human/once_human.exe`)
 - **Call of Duty: Modern Warfare** (`cod26-cod.exe`)
 - **Resident Evil 7 biohazard** (`re7.exe`)

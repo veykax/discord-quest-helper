@@ -29,7 +29,7 @@ func newPlatformManager() Manager {
 	os.MkdirAll(tDir, 0755)
 	return &windowsManager{
 		tempDir:  tDir,
-		baseStub: filepath.Join(tDir, "stub_base_v5.exe"),
+		baseStub: filepath.Join(tDir, "stub_base_v6.exe"),
 	}
 }
 
@@ -38,29 +38,45 @@ func (m *windowsManager) ensureStub() error {
 		return nil
 	}
 
-	// C# source: registers an off-screen, non-activating window with title
-	// for Discord EnumWindows scanner. 100% invisible to user, zero taskbar presence.
+	// C# source: registers a minimized window in taskbar with target title.
+	// Discord requires ShowInTaskbar = true (no WS_EX_TOOLWINDOW) to track the process.
+	// Window starts directly minimized with ShowWithoutActivation to avoid stealing focus.
 	csSource := `using System;
 using System.Drawing;
 using System.Windows.Forms;
+
 namespace DiscordGameStub {
-    class HiddenForm : Form {
-        protected override bool ShowWithoutActivation { get { return true; } }
-        public HiddenForm(string title) {
+    class MinimizedForm : Form {
+        protected override bool ShowWithoutActivation {
+            get { return true; }
+        }
+
+        public MinimizedForm(string title) {
             Text = title;
-            Width = 320;
-            Height = 200;
-            StartPosition = FormStartPosition.Manual;
-            Location = new Point(-32000, -32000);
-            ShowInTaskbar = false;
-            Opacity = 0.0;
+            Width = 360;
+            Height = 180;
+            StartPosition = FormStartPosition.CenterScreen;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
+            ShowInTaskbar = true;
+            WindowState = FormWindowState.Minimized;
+
+            Label lbl = new Label {
+                Text = title + "\n\n(Discord Quest Simulation)\nRunning minimized in taskbar.",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular)
+            };
+            Controls.Add(lbl);
         }
     }
+
     static class Program {
         [STAThread]
         static void Main(string[] args) {
             string title = args.Length > 0 ? args[0] : "Game";
-            Application.Run(new HiddenForm(title));
+            Application.EnableVisualStyles();
+            Application.Run(new MinimizedForm(title));
         }
     }
 }`
