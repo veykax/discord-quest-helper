@@ -142,6 +142,27 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 			}
 		}
 
+		// Fallback for non-Chromium environments (e.g. Zen Browser, Firefox)
+		localAppData := os.Getenv("LOCALAPPDATA")
+		progFiles := os.Getenv("ProgramFiles")
+		progFilesX86 := os.Getenv("ProgramFiles(x86)")
+		geckoCandidates := []string{
+			filepath.Join(localAppData, `Zen Browser\zen.exe`),
+			filepath.Join(progFiles, `Zen Browser\zen.exe`),
+			filepath.Join(progFilesX86, `Zen Browser\zen.exe`),
+			filepath.Join(progFiles, `Mozilla Firefox\firefox.exe`),
+			filepath.Join(progFilesX86, `Mozilla Firefox\firefox.exe`),
+			filepath.Join(localAppData, `Mozilla Firefox\firefox.exe`),
+		}
+		for _, gp := range geckoCandidates {
+			if fi, err := os.Stat(gp); err == nil && !fi.IsDir() {
+				cmd := exec.Command(gp, "--new-window", url)
+				if err := cmd.Start(); err == nil {
+					return
+				}
+			}
+		}
+
 		// Fallback: запуск в браузере по умолчанию
 		_ = exec.Command("cmd", "/c", "start", url).Start()
 
@@ -255,30 +276,40 @@ func findWindowsChromium() string {
 	progFiles := os.Getenv("ProgramFiles")
 	progFilesX86 := os.Getenv("ProgramFiles(x86)")
 
+	// 1. Direct candidates
 	candidates := []string{
-		// 1. Google Chrome (наиболее надежный standalone app режим)
+		// Google Chrome (наиболее распространенный standalone app режим)
 		filepath.Join(localAppData, `Google\Chrome\Application\chrome.exe`),
 		filepath.Join(progFiles, `Google\Chrome\Application\chrome.exe`),
 		filepath.Join(progFilesX86, `Google\Chrome\Application\chrome.exe`),
 
-		// 2. Microsoft Edge
+		// Standard Edge
 		filepath.Join(progFilesX86, `Microsoft\Edge\Application\msedge.exe`),
 		filepath.Join(progFiles, `Microsoft\Edge\Application\msedge.exe`),
 		filepath.Join(localAppData, `Microsoft\Edge\Application\msedge.exe`),
 
-		// 3. Vivaldi
+		// Brave
+		filepath.Join(localAppData, `BraveSoftware\Brave-Browser\Application\brave.exe`),
+		filepath.Join(progFiles, `BraveSoftware\Brave-Browser\Application\brave.exe`),
+
+		// Vivaldi
 		filepath.Join(localAppData, `Vivaldi\Application\vivaldi.exe`),
 		filepath.Join(progFiles, `Vivaldi\Application\vivaldi.exe`),
 		filepath.Join(progFilesX86, `Vivaldi\Application\vivaldi.exe`),
 
-		// 4. Brave
-		filepath.Join(localAppData, `BraveSoftware\Brave-Browser\Application\brave.exe`),
-		filepath.Join(progFiles, `BraveSoftware\Brave-Browser\Application\brave.exe`),
-
-		// 5. Opera
+		// Opera / Opera GX
 		filepath.Join(localAppData, `Programs\Opera GX\opera.exe`),
 		filepath.Join(localAppData, `Programs\Opera\launcher.exe`),
 		filepath.Join(progFiles, `Opera\launcher.exe`),
+
+		// Yandex
+		filepath.Join(localAppData, `Yandex\YandexBrowser\Application\browser.exe`),
+		filepath.Join(progFilesX86, `Yandex\YandexBrowser\Application\browser.exe`),
+
+		// Thorium & Chromium
+		filepath.Join(localAppData, `Thorium\Application\thorium.exe`),
+		filepath.Join(progFiles, `Thorium\Application\thorium.exe`),
+		filepath.Join(localAppData, `Chromium\Application\chrome.exe`),
 	}
 
 	for _, p := range candidates {
@@ -290,8 +321,30 @@ func findWindowsChromium() string {
 		}
 	}
 
-	// Также проверяем в PATH
-	for _, name := range []string{"chrome.exe", "msedge.exe", "vivaldi.exe", "brave.exe"} {
+	// 2. Modern Windows 11 EdgeCore & EdgeWebView (side-by-side versioned directories)
+	globPatterns := []string{
+		filepath.Join(progFilesX86, `Microsoft\EdgeCore\*\msedge.exe`),
+		filepath.Join(progFiles, `Microsoft\EdgeCore\*\msedge.exe`),
+		filepath.Join(localAppData, `Microsoft\EdgeCore\*\msedge.exe`),
+		filepath.Join(progFilesX86, `Microsoft\EdgeWebView\Application\*\msedgewebview2.exe`),
+		filepath.Join(progFiles, `Microsoft\EdgeWebView\Application\*\msedgewebview2.exe`),
+		filepath.Join(localAppData, `Microsoft\EdgeWebView\Application\*\msedgewebview2.exe`),
+		filepath.Join(progFilesX86, `Microsoft\Edge\Application\*\msedge.exe`),
+		filepath.Join(progFiles, `Microsoft\Edge\Application\*\msedge.exe`),
+	}
+
+	for _, pattern := range globPatterns {
+		if matches, err := filepath.Glob(pattern); err == nil && len(matches) > 0 {
+			for i := len(matches) - 1; i >= 0; i-- {
+				if fi, err := os.Stat(matches[i]); err == nil && !fi.IsDir() {
+					return matches[i]
+				}
+			}
+		}
+	}
+
+	// 3. Также проверяем в PATH
+	for _, name := range []string{"chrome.exe", "msedge.exe", "vivaldi.exe", "brave.exe", "opera.exe"} {
 		if p, err := exec.LookPath(name); err == nil {
 			return p
 		}

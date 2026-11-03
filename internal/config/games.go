@@ -74,13 +74,4 @@ var SupportedGames = []GameItem{
 		WindowTitle:  "VALORANT",
 		DiscordAppID: "700136079562375258",
 	},
-	{
-		ID:           "fc27",
-		Title:        "EA SPORTS FC 27",
-		ExeName:      "fc27.exe",
-		WindowTitle:  "EA Sports FC 27",
-		SteamFolder:  "EA SPORTS FC 27",
-		SteamAppID:   "4080220",
-		DiscordAppID: "1531874756096295054",
-	},
 }
