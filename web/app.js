@@ -11,6 +11,9 @@ const i18n = {
     statusRunning: "Running",
     statusCompleted: "Completed",
     captionIdle: "Select a process and start emulation",
+    captionReady: (title) => `Ready to emulate ${title}`,
+    captionClaimed: "Quest already claimed in Discord",
+    captionReadyToClaim: "Quest complete! Claim your reward in Discord",
     captionRunning: (exe) => `Emulating process: ${exe}`,
     captionCompleted: "Quest completed. Claim reward in Discord.",
     startBtn: "Start (15 min)",
@@ -36,11 +39,13 @@ const i18n = {
     soundTitle: "Completion sound",
     updateAvailable: (v) => `${v} Update`,
     autoQueue: "Auto-Queue active quests",
-    autoOpenDiscord: "Open Discord when done",
+    autoQueueDesc: "Runs accepted quests sequentially",
+    allQuestsDone: "All Quests Completed",
+    activeQuestsCount: (n) => `${n} Active`,
     toastQueueNextTitle: "Next Quest in Queue",
     toastQueueNextMsg: (title, rem) => `Starting ${title} (${rem})...`,
-    toastQueueAllDoneTitle: "All Quests Complete!",
-    toastQueueAllDoneMsg: "Every active quest in queue has finished. Rewards ready in Discord!",
+    toastQueueAllDoneTitle: "All Quests Complete",
+    toastQueueAllDoneMsg: "Every active quest in queue has finished. Rewards ready in Discord.",
   },
   ru: {
     langCode: "RU",
@@ -53,6 +58,9 @@ const i18n = {
     statusRunning: "Активен",
     statusCompleted: "Завершено",
     captionIdle: "Выберите процесс и запустите эмуляцию",
+    captionReady: (title) => `Готов к запуску ${title}`,
+    captionClaimed: "Квест уже выполнен в Discord",
+    captionReadyToClaim: "Квест завершен! Заберите награду в Discord",
     captionRunning: (exe) => `Процесс эмуляции: ${exe}`,
     captionCompleted: "Квест завершен. Награда готова в Discord.",
     startBtn: "Запустить (15 мин)",
@@ -78,11 +86,13 @@ const i18n = {
     soundTitle: "Звук по завершению",
     updateAvailable: (v) => `Доступно ${v}`,
     autoQueue: "Авто-очередь квестов",
-    autoOpenDiscord: "Открыть Discord по завершении",
+    autoQueueDesc: "Последовательный запуск принятых квестов",
+    allQuestsDone: "Все квесты выполнены",
+    activeQuestsCount: (n) => `${n} активн.`,
     toastQueueNextTitle: "Следующий квест в очереди",
     toastQueueNextMsg: (title, rem) => `Запуск ${title} (${rem})...`,
-    toastQueueAllDoneTitle: "Все квесты выполнены!",
-    toastQueueAllDoneMsg: "Все активные квесты из очереди завершены. Заберите награды в Discord!",
+    toastQueueAllDoneTitle: "Все квесты выполнены",
+    toastQueueAllDoneMsg: "Все активные квесты из очереди завершены. Заберите награды в Discord.",
   }
 };
 
@@ -103,15 +113,16 @@ let statusInterval = null;
 let pollCount = 0;
 let isSoundEnabled = localStorage.getItem("dqh_sound") !== "false";
 let isAutoQueue = localStorage.getItem("dqh_auto_queue") === "true";
-let isAutoOpenDiscord = localStorage.getItem("dqh_auto_open_discord") === "true";
 let queueNextTimeout = null;
 
 let detectedQuests = [];
 let matchedQuestsByGameId = {};
 let selectedDurationSeconds = 15 * 60 + 15;
+let lastCacheTimeStr = "";
 let audioCtx = null;
 
-const CIRCUMFERENCE = 2 * Math.PI * 82; // 515.22
+// Exact mathematical circumference: r = 76, 2 * PI * 76 = 477.522
+const CIRCUMFERENCE = 2 * Math.PI * 76;
 
 // Elements
 const brandLogo = document.getElementById("brandLogo");
@@ -121,14 +132,14 @@ const cacheTimeText = document.getElementById("cacheTimeText");
 const cacheDot = document.getElementById("cacheDot");
 
 const questProcessesHeading = document.getElementById("questProcessesHeading");
+const questSummaryPill = document.getElementById("questSummaryPill");
 const customProcessHeading = document.getElementById("customProcessHeading");
 const startBtnText = document.getElementById("startBtnText");
 const stopBtnText = document.getElementById("stopBtnText");
 
 const autoQueueCheckbox = document.getElementById("autoQueueCheckbox");
 const autoQueueText = document.getElementById("autoQueueText");
-const autoOpenDiscordCheckbox = document.getElementById("autoOpenDiscordCheckbox");
-const autoOpenDiscordText = document.getElementById("autoOpenDiscordText");
+const autoQueueDesc = document.getElementById("autoQueueDesc");
 
 const gamesListEl = document.getElementById("gamesList");
 const gamesCountEl = document.getElementById("gamesCount");
@@ -183,12 +194,13 @@ function unlockAudio() {
 
 // Init
 async function init() {
-  ringFill.style.strokeDasharray = `${CIRCUMFERENCE}`;
-  ringFill.style.strokeDashoffset = `${CIRCUMFERENCE}`;
+  if (ringFill) {
+    ringFill.style.strokeDasharray = `${CIRCUMFERENCE}`;
+    ringFill.style.strokeDashoffset = `${CIRCUMFERENCE}`;
+  }
 
-  // Restore automation checkbox states
+  // Restore automation checkbox state
   if (autoQueueCheckbox) autoQueueCheckbox.checked = isAutoQueue;
-  if (autoOpenDiscordCheckbox) autoOpenDiscordCheckbox.checked = isAutoOpenDiscord;
 
   // Unlock audio context on first user gesture anywhere
   window.addEventListener("click", unlockAudio, { passive: true });
@@ -217,7 +229,11 @@ function applyLanguage(lang) {
   if (openDiscordBtnText) openDiscordBtnText.textContent = dict.openDiscord;
   if (soundToggleBtn) soundToggleBtn.title = dict.soundTitle;
   if (autoQueueText) autoQueueText.textContent = dict.autoQueue;
-  if (autoOpenDiscordText) autoOpenDiscordText.textContent = dict.autoOpenDiscord;
+  if (autoQueueDesc) autoQueueDesc.textContent = dict.autoQueueDesc;
+
+  if (lastCacheTimeStr && cacheTimeText) {
+    cacheTimeText.textContent = t("cacheStatusSynced", lastCacheTimeStr);
+  }
 
   if (isRunning) {
     statusText.textContent = dict.statusRunning;
@@ -225,7 +241,7 @@ function applyLanguage(lang) {
     if (stopBtnText) stopBtnText.textContent = dict.stopBtn;
   } else {
     statusText.textContent = dict.statusIdle;
-    timerCaption.textContent = dict.captionIdle;
+    updateTimerCaption();
     if (startBtnText) {
       if (selectedDurationSeconds && selectedDurationSeconds < 900) {
         startBtnText.textContent = t("startBtnRem", formatMinSec(selectedDurationSeconds));
@@ -238,6 +254,7 @@ function applyLanguage(lang) {
   if (allGames.length > 0) {
     renderGames(getFilteredGames());
     updateActiveGameQuestBadge();
+    updateQuestSummary();
   }
 
   renderUpdateBtn();
@@ -336,6 +353,40 @@ function getFilteredGames() {
   );
 }
 
+function updateQuestSummary() {
+  if (!questSummaryPill) return;
+  if (!detectedQuests || detectedQuests.length === 0) {
+    questSummaryPill.classList.add("hidden");
+    return;
+  }
+
+  const activeCount = detectedQuests.filter((q) => q.enrolled && !q.completed).length;
+  const claimedCount = detectedQuests.filter((q) => q.claimed).length;
+
+  if (activeCount > 0) {
+    questSummaryPill.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span>${t("activeQuestsCount", activeCount)}</span>
+    `;
+    questSummaryPill.className = "quest-summary-pill in-progress";
+    questSummaryPill.classList.remove("hidden");
+  } else if (claimedCount > 0 && activeCount === 0) {
+    questSummaryPill.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span>${t("allQuestsDone")}</span>
+    `;
+    questSummaryPill.className = "quest-summary-pill all-done";
+    questSummaryPill.classList.remove("hidden");
+  } else {
+    questSummaryPill.classList.add("hidden");
+  }
+}
+
 async function fetchGames() {
   try {
     const res = await fetch("/api/games");
@@ -380,6 +431,7 @@ async function fetchQuests(silent = false) {
     sortGamesWithQuests();
     renderGames(getFilteredGames());
     updateActiveGameQuestBadge();
+    updateQuestSummary();
 
     if (!selectedGame && allGames.length > 0) {
       selectGame(allGames[0]);
@@ -388,10 +440,11 @@ async function fetchQuests(silent = false) {
     // Update footer cache timestamp
     if (data.foundCache && data.modUnix) {
       const d = new Date(data.modUnix * 1000);
-      const tStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      if (cacheTimeText) cacheTimeText.textContent = t("cacheStatusSynced", tStr);
+      lastCacheTimeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      if (cacheTimeText) cacheTimeText.textContent = t("cacheStatusSynced", lastCacheTimeStr);
       if (cacheDot) cacheDot.style.background = "var(--green)";
     } else {
+      lastCacheTimeStr = "";
       if (cacheTimeText) cacheTimeText.textContent = t("cacheStatusNotFound");
       if (cacheDot) cacheDot.style.background = "var(--text-muted)";
     }
@@ -505,6 +558,29 @@ function updateActiveGameQuestBadge() {
   }
 }
 
+function updateTimerCaption() {
+  if (isRunning) {
+    if (timerCaption) timerCaption.textContent = t("captionRunning", selectedGame ? selectedGame.exe : "");
+    return;
+  }
+
+  if (!selectedGame) {
+    if (timerCaption) timerCaption.textContent = t("captionIdle");
+    return;
+  }
+
+  const quest = matchedQuestsByGameId[selectedGame.id];
+  if (quest && quest.completed && !quest.claimed) {
+    if (timerCaption) timerCaption.textContent = t("captionReadyToClaim");
+  } else if (quest && quest.claimed) {
+    if (timerCaption) timerCaption.textContent = t("captionClaimed");
+  } else if (quest && quest.enrolled && !quest.completed) {
+    if (timerCaption) timerCaption.textContent = t("captionReady", selectedGame.title);
+  } else {
+    if (timerCaption) timerCaption.textContent = t("captionReady", selectedGame.title);
+  }
+}
+
 function selectGame(game) {
   if (isRunning) return;
   selectedGame = game;
@@ -534,6 +610,7 @@ function selectGame(game) {
   }
 
   updateActiveGameQuestBadge();
+  updateTimerCaption();
 }
 
 function setupEventListeners() {
@@ -563,14 +640,6 @@ function setupEventListeners() {
     autoQueueCheckbox.addEventListener("change", (e) => {
       isAutoQueue = e.target.checked;
       localStorage.setItem("dqh_auto_queue", isAutoQueue);
-    });
-  }
-
-  // Auto-Open Discord Toggle
-  if (autoOpenDiscordCheckbox) {
-    autoOpenDiscordCheckbox.addEventListener("change", (e) => {
-      isAutoOpenDiscord = e.target.checked;
-      localStorage.setItem("dqh_auto_open_discord", isAutoOpenDiscord);
     });
   }
 
@@ -735,7 +804,7 @@ function setRunningState(running) {
     if (brandLogo) brandLogo.classList.remove("is-running");
     statusBadge.className = "status-indicator";
     statusText.textContent = t("statusIdle");
-    timerCaption.textContent = t("captionIdle");
+    updateTimerCaption();
     ringFill.classList.remove("running");
     timerDigits.classList.remove("running");
     if (statusInterval) {
@@ -839,9 +908,9 @@ async function onQuestCompleted() {
       const nextGame = allGames.find((g) => g.id === nextQuest.matchedGameId);
       if (nextGame) {
         const bufferSec = 15;
-        const recommended = Math.max(30, nextQuest.remainingSeconds + bufferSec);
-        showToast(t("toastQueueNextTitle"), t("toastQueueNextMsg", nextGame.title, formatMinSec(recommended)));
+        const targetDur = Math.max(30, nextQuest.remainingSeconds + bufferSec);
         selectGame(nextGame);
+        showToast(t("toastQueueNextTitle"), t("toastQueueNextMsg", nextGame.title, formatMinSec(targetDur)));
 
         if (queueNextTimeout) clearTimeout(queueNextTimeout);
         queueNextTimeout = setTimeout(async () => {
@@ -875,13 +944,6 @@ async function onQuestCompleted() {
         });
       } catch (e) {}
     }
-  }
-
-  // Open Discord client automatically if requested
-  if (isAutoOpenDiscord) {
-    try {
-      await fetch("/api/open-discord", { method: "POST" });
-    } catch (err) {}
   }
 }
 

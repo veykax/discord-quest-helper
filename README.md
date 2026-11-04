@@ -50,7 +50,6 @@
 - **Auto-Detection of Active Quests:** Automatically reads active quests and real-time progress directly from Discord's local disk cache. 100% offline, zero network requests, zero token or account risk.
 - **Auto-Queue Quests:** Automatically cycles through all accepted quests sequentially one after another without manual interaction.
 - **Multi-Drive Steam Library Discovery:** Scans all connected storage drives (C:, D:, etc.) via the Registry and libraryfolders.vdf, ensuring manifest and steam_appid.txt spoofing works seamlessly regardless of where games are installed.
-- **Auto-Open Discord:** Optional toggle to automatically bring Discord into focus when your quest or queue finishes so you can claim your rewards immediately.
 - **Over-The-Air Game Database:** Instant cloud sync (`games.json`) for verified game paths and special launch parameters without downloading new binaries.
 - **Auto-Sorting by Quest Status:** Games with active quests are highlighted and automatically prioritized to the top of your list.
 - **Zero External Dependencies:** Compiles into a single standalone executable (~7.8 MB). Does not require Go, Python, Node.js, Electron, or browser extensions.

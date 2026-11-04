@@ -31,7 +31,7 @@
       <div class="header-actions">
         <!-- Update notification button -->
         <button type="button" class="header-link-btn update-btn hidden" id="updateBtn" title="New version available">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -41,7 +41,7 @@
 
         <!-- Direct Discord link -->
         <button type="button" class="header-link-btn" id="openDiscordHeaderBtn" title="Open Discord Quests">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
             <polyline points="15 3 21 3 21 9"></polyline>
             <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -73,9 +73,10 @@
           <div class="panel-title-row">
             <h2 id="questProcessesHeading">Processes</h2>
             <span class="items-count" id="gamesCount">0</span>
+            <span class="quest-summary-pill hidden" id="questSummaryPill"></span>
           </div>
           <div class="search-bar">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -128,9 +129,9 @@
         <!-- Circular Timer -->
         <div class="timer-card">
           <div class="circular-progress">
-            <svg viewBox="0 0 200 200" class="progress-ring">
-              <circle class="ring-bg" cx="100" cy="100" r="82" />
-              <circle class="ring-fill" id="ringFill" cx="100" cy="100" r="82" />
+            <svg viewBox="0 0 180 180" class="progress-ring" shape-rendering="geometricPrecision">
+              <circle class="ring-bg" cx="90" cy="90" r="76" shape-rendering="geometricPrecision" />
+              <circle class="ring-fill" id="ringFill" cx="90" cy="90" r="76" shape-rendering="geometricPrecision" />
             </svg>
             <div class="timer-center">
               <span class="timer-digits" id="timerDigits">15:15</span>
@@ -157,22 +158,37 @@
           </button>
         </div>
 
-        <!-- Automation Options -->
-        <div class="automation-options">
-          <label class="custom-checkbox-label" title="Automatically start the next active quest when the current one finishes">
-            <input type="checkbox" id="autoQueueCheckbox">
-            <span class="custom-checkbox"></span>
-            <span id="autoQueueText">Auto-Queue active quests</span>
-          </label>
-          <label class="custom-checkbox-label" title="Open Discord Quests page automatically when all quests are complete">
-            <input type="checkbox" id="autoOpenDiscordCheckbox">
-            <span class="custom-checkbox"></span>
-            <span id="autoOpenDiscordText">Open Discord when done</span>
+        <!-- Automation Card (Auto-Queue) -->
+        <div class="automation-card">
+          <label class="toggle-row" title="Automatically start the next active quest when the current one finishes">
+            <div class="toggle-info">
+              <div class="toggle-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+              </div>
+              <div class="toggle-text-block">
+                <span class="toggle-label" id="autoQueueText">Auto-Queue active quests</span>
+                <span class="toggle-desc" id="autoQueueDesc">Runs accepted quests sequentially</span>
+              </div>
+            </div>
+            <div class="switch">
+              <input type="checkbox" id="autoQueueCheckbox">
+              <span class="switch-slider"></span>
+            </div>
           </label>
         </div>
 
         <!-- Clean Service Footer -->
         <div class="service-footer">
+          <div class="footer-left">
+            <span class="version-tag">v1.0.5</span>
+          </div>
           <div class="cache-status">
             <span class="cache-dot" id="cacheDot"></span>
             <span id="cacheTimeText">Discord cache synced</span>
