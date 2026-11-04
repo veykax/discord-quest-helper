@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	"discord-quest-helper/internal/steam"
 )
 
 type windowsManager struct {
@@ -133,31 +135,24 @@ func (m *windowsManager) Start(exeName string, windowTitle string, steamFolder s
 
 	targetDir := m.tempDir
 
-	// Optional Steam common library check
+	// Multi-drive Steam library integration (supports libraries on D:, E:, etc.)
 	if steamFolder != "" {
-		steamCandidates := []string{
-			`C:\Program Files (x86)\Steam\steamapps\common`,
-			`C:\Program Files\Steam\steamapps\common`,
-		}
+		libs := steam.GetAllLibraries()
+		if len(libs) > 0 {
+			bestLib := steam.FindBestLibrary(libs, steamFolder, steamAppID)
+			gameDir := filepath.Join(bestLib.CommonDir, steamFolder)
+			_ = os.MkdirAll(gameDir, 0755)
+			targetDir = gameDir
 
-		for _, sCommon := range steamCandidates {
-			if _, err := os.Stat(sCommon); err == nil {
-				gameDir := filepath.Join(sCommon, steamFolder)
-				os.MkdirAll(gameDir, 0755)
-				targetDir = gameDir
+			if steamAppID != "" {
+				manifestPath := filepath.Join(bestLib.SteamAppsDir, fmt.Sprintf("appmanifest_%s.acf", steamAppID))
+				manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
+					steamAppID, windowTitle, steamFolder)
+				_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
+				m.currentManifest = manifestPath
 
-				if steamAppID != "" {
-					steamApps := filepath.Dir(sCommon)
-					manifestPath := filepath.Join(steamApps, fmt.Sprintf("appmanifest_%s.acf", steamAppID))
-					manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
-						steamAppID, windowTitle, steamFolder)
-					_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
-					m.currentManifest = manifestPath
-
-					appIdFile := filepath.Join(targetDir, "steam_appid.txt")
-					_ = os.WriteFile(appIdFile, []byte(steamAppID), 0644)
-				}
-				break
+				appIdFile := filepath.Join(targetDir, "steam_appid.txt")
+				_ = os.WriteFile(appIdFile, []byte(steamAppID), 0644)
 			}
 		}
 	}

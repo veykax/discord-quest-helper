@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"discord-quest-helper/internal/steam"
 )
 
 type linuxManager struct {
@@ -126,39 +128,27 @@ func (m *linuxManager) Start(exeName, windowTitle, steamFolder, steamAppID, disc
 		_ = os.MkdirAll(targetDir, 0755)
 	}
 
-	// Optional Steam common library integration
+	// Multi-drive Steam library integration
 	if steamFolder != "" {
-		home, _ := os.UserHomeDir()
-		steamCandidates := []string{
-			filepath.Join(home, ".var/app/com.discordapp.Discord/.local/share/Steam/steamapps"),
-			filepath.Join(home, ".var/app/com.discordapp.Discord/.steam/steam/steamapps"),
-			filepath.Join(home, ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"),
-			filepath.Join(home, ".local/share/Steam/steamapps"),
-			filepath.Join(home, ".steam/steam/steamapps"),
-			filepath.Join(home, ".steam/root/steamapps"),
-		}
+		libs := steam.GetAllLibraries()
+		if len(libs) > 0 {
+			bestLib := steam.FindBestLibrary(libs, steamFolder, steamAppID)
+			gameDir := filepath.Join(bestLib.CommonDir, steamFolder)
+			_ = os.MkdirAll(gameDir, 0755)
+			if flatpakInst == "" {
+				targetDir = gameDir
+			}
 
-		for _, sApps := range steamCandidates {
-			if fi, err := os.Stat(sApps); err == nil && fi.IsDir() {
-				sCommon := filepath.Join(sApps, "common")
-				gameDir := filepath.Join(sCommon, steamFolder)
-				_ = os.MkdirAll(gameDir, 0755)
-				if flatpakInst == "" {
-					targetDir = gameDir
-				}
+			if steamAppID != "" {
+				manifestPath := filepath.Join(bestLib.SteamAppsDir, fmt.Sprintf("appmanifest_%s.acf", steamAppID))
+				manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
+					steamAppID, windowTitle, steamFolder)
+				_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
+				m.currentManifest = manifestPath
 
-				if steamAppID != "" {
-					manifestPath := filepath.Join(sApps, fmt.Sprintf("appmanifest_%s.acf", steamAppID))
-					manifestData := fmt.Sprintf("\"AppState\"\n{\n\t\"appid\"\t\t\"%s\"\n\t\"universe\"\t\t\"1\"\n\t\"name\"\t\t\"%s\"\n\t\"StateFlags\"\t\t\"4\"\n\t\"installdir\"\t\t\"%s\"\n}\n",
-						steamAppID, windowTitle, steamFolder)
-					_ = os.WriteFile(manifestPath, []byte(manifestData), 0644)
-					m.currentManifest = manifestPath
-
-					appIdFile := filepath.Join(gameDir, "steam_appid.txt")
-					_ = os.WriteFile(appIdFile, []byte(steamAppID), 0644)
-					m.currentAppIdTxt = appIdFile
-				}
-				break
+				appIdFile := filepath.Join(gameDir, "steam_appid.txt")
+				_ = os.WriteFile(appIdFile, []byte(steamAppID), 0644)
+				m.currentAppIdTxt = appIdFile
 			}
 		}
 	}

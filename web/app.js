@@ -35,6 +35,12 @@ const i18n = {
     toastConnErrMsg: "Failed to communicate with service: ",
     soundTitle: "Completion sound",
     updateAvailable: (v) => `${v} Update`,
+    autoQueue: "Auto-Queue active quests",
+    autoOpenDiscord: "Open Discord when done",
+    toastQueueNextTitle: "Next Quest in Queue",
+    toastQueueNextMsg: (title, rem) => `Starting ${title} (${rem})...`,
+    toastQueueAllDoneTitle: "All Quests Complete!",
+    toastQueueAllDoneMsg: "Every active quest in queue has finished. Rewards ready in Discord!",
   },
   ru: {
     langCode: "RU",
@@ -71,15 +77,21 @@ const i18n = {
     toastConnErrMsg: "Не удалось связаться с сервисом: ",
     soundTitle: "Звук по завершению",
     updateAvailable: (v) => `Доступно ${v}`,
+    autoQueue: "Авто-очередь квестов",
+    autoOpenDiscord: "Открыть Discord по завершении",
+    toastQueueNextTitle: "Следующий квест в очереди",
+    toastQueueNextMsg: (title, rem) => `Запуск ${title} (${rem})...`,
+    toastQueueAllDoneTitle: "Все квесты выполнены!",
+    toastQueueAllDoneMsg: "Все активные квесты из очереди завершены. Заберите награды в Discord!",
   }
 };
 
 let currentLang = localStorage.getItem("dqh_lang_v2") || "en";
 
-function t(key, arg) {
+function t(key, arg, arg2) {
   const dict = i18n[currentLang] || i18n.en;
   const val = dict[key];
-  if (typeof val === "function") return val(arg);
+  if (typeof val === "function") return val(arg, arg2);
   return val !== undefined ? val : key;
 }
 
@@ -90,6 +102,10 @@ let isRunning = false;
 let statusInterval = null;
 let pollCount = 0;
 let isSoundEnabled = localStorage.getItem("dqh_sound") !== "false";
+let isAutoQueue = localStorage.getItem("dqh_auto_queue") === "true";
+let isAutoOpenDiscord = localStorage.getItem("dqh_auto_open_discord") === "true";
+let queueNextTimeout = null;
+
 let detectedQuests = [];
 let matchedQuestsByGameId = {};
 let selectedDurationSeconds = 15 * 60 + 15;
@@ -108,6 +124,11 @@ const questProcessesHeading = document.getElementById("questProcessesHeading");
 const customProcessHeading = document.getElementById("customProcessHeading");
 const startBtnText = document.getElementById("startBtnText");
 const stopBtnText = document.getElementById("stopBtnText");
+
+const autoQueueCheckbox = document.getElementById("autoQueueCheckbox");
+const autoQueueText = document.getElementById("autoQueueText");
+const autoOpenDiscordCheckbox = document.getElementById("autoOpenDiscordCheckbox");
+const autoOpenDiscordText = document.getElementById("autoOpenDiscordText");
 
 const gamesListEl = document.getElementById("gamesList");
 const gamesCountEl = document.getElementById("gamesCount");
@@ -165,6 +186,10 @@ async function init() {
   ringFill.style.strokeDasharray = `${CIRCUMFERENCE}`;
   ringFill.style.strokeDashoffset = `${CIRCUMFERENCE}`;
 
+  // Restore automation checkbox states
+  if (autoQueueCheckbox) autoQueueCheckbox.checked = isAutoQueue;
+  if (autoOpenDiscordCheckbox) autoOpenDiscordCheckbox.checked = isAutoOpenDiscord;
+
   // Unlock audio context on first user gesture anywhere
   window.addEventListener("click", unlockAudio, { passive: true });
   window.addEventListener("keydown", unlockAudio, { passive: true });
@@ -191,6 +216,8 @@ function applyLanguage(lang) {
   if (customSelectBtn) customSelectBtn.textContent = dict.selectBtn;
   if (openDiscordBtnText) openDiscordBtnText.textContent = dict.openDiscord;
   if (soundToggleBtn) soundToggleBtn.title = dict.soundTitle;
+  if (autoQueueText) autoQueueText.textContent = dict.autoQueue;
+  if (autoOpenDiscordText) autoOpenDiscordText.textContent = dict.autoOpenDiscord;
 
   if (isRunning) {
     statusText.textContent = dict.statusRunning;
@@ -222,6 +249,7 @@ function renderUpdateBtn() {
     updateBtnText.textContent = t("updateAvailable", appUpdateInfo.latestVersion);
     updateBtn.classList.remove("hidden");
   } else {
+    updateBtn.classList.remove("hidden");
     updateBtn.classList.add("hidden");
   }
 }
@@ -530,6 +558,22 @@ function setupEventListeners() {
     unlockAudio();
   });
 
+  // Auto-Queue Toggle
+  if (autoQueueCheckbox) {
+    autoQueueCheckbox.addEventListener("change", (e) => {
+      isAutoQueue = e.target.checked;
+      localStorage.setItem("dqh_auto_queue", isAutoQueue);
+    });
+  }
+
+  // Auto-Open Discord Toggle
+  if (autoOpenDiscordCheckbox) {
+    autoOpenDiscordCheckbox.addEventListener("change", (e) => {
+      isAutoOpenDiscord = e.target.checked;
+      localStorage.setItem("dqh_auto_open_discord", isAutoOpenDiscord);
+    });
+  }
+
   // Custom game
   customSelectBtn.addEventListener("click", () => {
     const exe = customExeInput.value.trim();
@@ -586,7 +630,14 @@ function setupEventListeners() {
     }
     startGame();
   });
-  stopBtn.addEventListener("click", stopGame);
+
+  stopBtn.addEventListener("click", () => {
+    if (queueNextTimeout) {
+      clearTimeout(queueNextTimeout);
+      queueNextTimeout = null;
+    }
+    stopGame();
+  });
 
   // Auto-sync whenever window gains focus (even when running)
   window.addEventListener("focus", () => {
@@ -761,7 +812,7 @@ function resetTimerUI() {
   ringFill.style.strokeDashoffset = CIRCUMFERENCE;
 }
 
-function onQuestCompleted() {
+async function onQuestCompleted() {
   if (brandLogo) brandLogo.classList.remove("is-running");
   timerDigits.textContent = "00:00";
   ringFill.style.strokeDashoffset = 0;
@@ -773,20 +824,65 @@ function onQuestCompleted() {
     playChime();
   }
 
-  showToast(t("toastCompleteTitle"), t("toastCompleteMsg"));
+  // Auto refresh quests cache after completion
+  await fetchQuests(true);
 
-  // Desktop Native Notification
-  if ("Notification" in window && Notification.permission === "granted") {
-    try {
-      new Notification(t("toastCompleteTitle"), {
-        body: t("toastCompleteMsg"),
-        icon: "icon-192.png",
-      });
-    } catch (e) {}
+  // Check if Auto-Queue has more active quests to run
+  if (isAutoQueue) {
+    const currentCompletedId = selectedGame ? selectedGame.id : "";
+    const remainingActive = detectedQuests.filter(
+      (q) => q.enrolled && !q.completed && q.matchedGameId && q.matchedGameId !== currentCompletedId
+    );
+
+    if (remainingActive.length > 0) {
+      const nextQuest = remainingActive[0];
+      const nextGame = allGames.find((g) => g.id === nextQuest.matchedGameId);
+      if (nextGame) {
+        const bufferSec = 15;
+        const recommended = Math.max(30, nextQuest.remainingSeconds + bufferSec);
+        showToast(t("toastQueueNextTitle"), t("toastQueueNextMsg", nextGame.title, formatMinSec(recommended)));
+        selectGame(nextGame);
+
+        if (queueNextTimeout) clearTimeout(queueNextTimeout);
+        queueNextTimeout = setTimeout(async () => {
+          if (isAutoQueue && !isRunning) {
+            await startGame();
+          }
+        }, 2500);
+        return;
+      }
+    }
   }
 
-  // Trigger auto refresh of Discord cache after completion
-  setTimeout(() => fetchQuests(true), 2500);
+  // All quests in queue completed or single quest finished
+  if (isAutoQueue) {
+    showToast(t("toastQueueAllDoneTitle"), t("toastQueueAllDoneMsg"));
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification(t("toastQueueAllDoneTitle"), {
+          body: t("toastQueueAllDoneMsg"),
+          icon: "icon-192.png",
+        });
+      } catch (e) {}
+    }
+  } else {
+    showToast(t("toastCompleteTitle"), t("toastCompleteMsg"));
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification(t("toastCompleteTitle"), {
+          body: t("toastCompleteMsg"),
+          icon: "icon-192.png",
+        });
+      } catch (e) {}
+    }
+  }
+
+  // Open Discord client automatically if requested
+  if (isAutoOpenDiscord) {
+    try {
+      await fetch("/api/open-discord", { method: "POST" });
+    } catch (err) {}
+  }
 }
 
 function showToast(title, message) {
