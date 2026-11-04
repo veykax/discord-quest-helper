@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -182,7 +183,7 @@ func isQuestsCacheFile(filePath string) bool {
 	}
 	defer f.Close()
 
-	buf := make([]byte, 1024)
+	buf := make([]byte, 32768)
 	n, err := f.Read(buf)
 	if n < 10 {
 		return false
@@ -242,22 +243,36 @@ func FindFreshestCacheFile() (string, time.Time, error) {
 			continue
 		}
 
+		type fileEntry struct {
+			path    string
+			modTime time.Time
+		}
+		var fFiles []fileEntry
 		for _, entry := range entries {
 			if entry.IsDir() || !strings.HasPrefix(entry.Name(), "f_") {
 				continue
 			}
-			fullPath := filepath.Join(dir, entry.Name())
-			fi, err := entry.Info()
-			if err != nil {
-				continue
+			if fi, err := entry.Info(); err == nil {
+				fFiles = append(fFiles, fileEntry{
+					path:    filepath.Join(dir, entry.Name()),
+					modTime: fi.ModTime(),
+				})
 			}
+		}
 
-			// Only inspect if it could be newer than our current best, or if we haven't found any yet
-			if bestPath == "" || fi.ModTime().After(bestMod) {
-				if isQuestsCacheFile(fullPath) {
-					bestMod = fi.ModTime()
-					bestPath = fullPath
-				}
+		// Sort newest first: the first valid quest file found is guaranteed to be the freshest in this dir
+		sort.Slice(fFiles, func(i, j int) bool {
+			return fFiles[i].modTime.After(fFiles[j].modTime)
+		})
+
+		for _, item := range fFiles {
+			if bestPath != "" && !item.modTime.After(bestMod) {
+				break
+			}
+			if isQuestsCacheFile(item.path) {
+				bestMod = item.modTime
+				bestPath = item.path
+				break
 			}
 		}
 	}
@@ -290,49 +305,66 @@ func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
 		}
 	}
 
+	var raw rawDiscordCache
+
 	// Chromium Simple Cache Stream 1 starts with gzip header: 0x1F, 0x8B, 0x08
 	gzipHeader := []byte{0x1f, 0x8b, 0x08}
 	offset := bytes.Index(data, gzipHeader)
-	if offset == -1 {
-		return QuestsResponse{
-			Quests:     []QuestStatus{},
-			FoundCache: true,
-			CachePath:  filePath,
-			Error:      "gzip magic header not found in cache entry",
+	if offset != -1 {
+		zr, err := gzip.NewReader(bytes.NewReader(data[offset:]))
+		if err != nil {
+			return QuestsResponse{
+				Quests:     []QuestStatus{},
+				FoundCache: true,
+				CachePath:  filePath,
+				Error:      fmt.Sprintf("create gzip reader: %v", err),
+			}
 		}
-	}
+		defer zr.Close()
 
-	zr, err := gzip.NewReader(bytes.NewReader(data[offset:]))
-	if err != nil {
-		return QuestsResponse{
-			Quests:     []QuestStatus{},
-			FoundCache: true,
-			CachePath:  filePath,
-			Error:      fmt.Sprintf("create gzip reader: %v", err),
+		// Prevent reading beyond the single gzip member into Chromium cache trailer
+		zr.Multistream(false)
+
+		decompressed, err := io.ReadAll(zr)
+		if err != nil {
+			return QuestsResponse{
+				Quests:     []QuestStatus{},
+				FoundCache: true,
+				CachePath:  filePath,
+				Error:      fmt.Sprintf("decompress stream: %v", err),
+			}
 		}
-	}
-	defer zr.Close()
 
-	// Prevent reading beyond the single gzip member into Chromium cache trailer
-	zr.Multistream(false)
-
-	decompressed, err := io.ReadAll(zr)
-	if err != nil {
-		return QuestsResponse{
-			Quests:     []QuestStatus{},
-			FoundCache: true,
-			CachePath:  filePath,
-			Error:      fmt.Sprintf("decompress stream: %v", err),
+		if err := json.Unmarshal(decompressed, &raw); err != nil {
+			return QuestsResponse{
+				Quests:     []QuestStatus{},
+				FoundCache: true,
+				CachePath:  filePath,
+				Error:      fmt.Sprintf("unmarshal json: %v", err),
+			}
 		}
-	}
-
-	var raw rawDiscordCache
-	if err := json.Unmarshal(decompressed, &raw); err != nil {
+	} else if jsonStart := bytes.IndexByte(data, '{'); jsonStart != -1 && bytes.Contains(data, []byte("\"quests\"")) {
+		// Fallback for uncompressed JSON payload in cache
+		unmarshalErr := json.Unmarshal(data[jsonStart:], &raw)
+		if unmarshalErr != nil {
+			if lastBrace := bytes.LastIndexByte(data, '}'); lastBrace > jsonStart {
+				unmarshalErr = json.Unmarshal(data[jsonStart:lastBrace+1], &raw)
+			}
+		}
+		if unmarshalErr != nil {
+			return QuestsResponse{
+				Quests:     []QuestStatus{},
+				FoundCache: true,
+				CachePath:  filePath,
+				Error:      fmt.Sprintf("unmarshal uncompressed json: %v", unmarshalErr),
+			}
+		}
+	} else {
 		return QuestsResponse{
 			Quests:     []QuestStatus{},
 			FoundCache: true,
 			CachePath:  filePath,
-			Error:      fmt.Sprintf("unmarshal json: %v", err),
+			Error:      "neither gzip header nor quests JSON found in cache entry",
 		}
 	}
 
@@ -345,10 +377,14 @@ func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
 
 		// Skip expired quests that were not completed
 		if q.Config.ExpiresAt != "" {
-			if expTime, err := time.Parse(time.RFC3339, q.Config.ExpiresAt); err == nil {
-				if expTime.Before(time.Now()) && q.UserStatus.CompletedAt == nil {
-					continue
-				}
+			var expTime time.Time
+			var parseErr error
+			expTime, parseErr = time.Parse(time.RFC3339Nano, q.Config.ExpiresAt)
+			if parseErr != nil {
+				expTime, parseErr = time.Parse(time.RFC3339, q.Config.ExpiresAt)
+			}
+			if parseErr == nil && expTime.Before(time.Now()) && q.UserStatus.CompletedAt == nil {
+				continue
 			}
 		}
 

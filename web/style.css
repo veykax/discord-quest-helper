@@ -736,3 +736,34 @@ html, body {
 .hidden {
   display: none !important;
 }
+
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.delete-custom-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.delete-custom-btn:hover {
+  background: rgba(218, 55, 60, 0.15);
+  color: var(--red);
+  opacity: 1;
+}

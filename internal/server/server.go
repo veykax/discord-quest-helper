@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -26,6 +27,7 @@ type AppServer struct {
 	remainingSeconds int
 	totalSeconds     int
 	exitChan         chan struct{}
+	timerCancel      context.CancelFunc
 }
 
 func New(sp spoofer.Manager, webFS fs.FS, exitChan chan struct{}) *AppServer {
@@ -142,6 +144,16 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// 1. Cancel previous timer goroutine if running
+	s.mu.Lock()
+	if s.timerCancel != nil {
+		s.timerCancel()
+		s.timerCancel = nil
+	}
+	s.isRunning = false
+	s.mu.Unlock()
+
+	// 2. Start spoofer process OUTSIDE of server lock to prevent lock inversion/deadlocks
 	if err := s.spoofer.Start(req.ExeName, wTitle, req.SteamFolder, steamAppID, discordAppID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -152,8 +164,11 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 		duration = req.DurationSeconds
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	s.mu.Lock()
 	s.isRunning = true
+	s.timerCancel = cancel
 	s.currentGame = config.GameItem{
 		ID:           req.ID,
 		Title:        req.Title,
@@ -167,7 +182,7 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 	s.remainingSeconds = duration
 	s.mu.Unlock()
 
-	go s.runTimer()
+	go s.runTimer(ctx)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
@@ -175,10 +190,16 @@ func (s *AppServer) handleStart(w http.ResponseWriter, r *http.Request) {
 
 func (s *AppServer) handleStop(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
+	if s.timerCancel != nil {
+		s.timerCancel()
+		s.timerCancel = nil
+	}
 	s.isRunning = false
-	s.spoofer.Stop()
 	s.remainingSeconds = s.totalSeconds
 	s.mu.Unlock()
+
+	// Stop spoofer outside of server lock
+	_ = s.spoofer.Stop()
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
@@ -186,9 +207,14 @@ func (s *AppServer) handleStop(w http.ResponseWriter, r *http.Request) {
 
 func (s *AppServer) handleExit(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
+	if s.timerCancel != nil {
+		s.timerCancel()
+		s.timerCancel = nil
+	}
 	s.isRunning = false
-	s.spoofer.Stop()
 	s.mu.Unlock()
+
+	_ = s.spoofer.Stop()
 
 	w.WriteHeader(http.StatusOK)
 	close(s.exitChan)
@@ -272,32 +298,48 @@ func (s *AppServer) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(info)
 }
 
-func (s *AppServer) runTimer() {
+func (s *AppServer) runTimer(ctx context.Context) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		s.mu.Lock()
-		if !s.isRunning {
-			s.mu.Unlock()
+	for {
+		select {
+		case <-ctx.Done():
 			return
-		}
+		case <-ticker.C:
+			// Check spoofer status OUTSIDE of s.mu lock to prevent deadlock with spoofer.mu
+			spooferRunning := s.spoofer.IsRunning()
 
-		// Если окно симуляции игры было закрыто пользователем — останавливаем квест
-		if !s.spoofer.IsRunning() {
-			s.isRunning = false
-			s.mu.Unlock()
-			return
-		}
+			s.mu.Lock()
+			if !s.isRunning {
+				s.mu.Unlock()
+				return
+			}
 
-		if s.remainingSeconds > 0 {
-			s.remainingSeconds--
-			s.mu.Unlock()
-		} else {
-			s.isRunning = false
-			s.spoofer.Stop()
-			s.mu.Unlock()
-			return
+			// Если окно симуляции игры было закрыто пользователем — останавливаем квест
+			if !spooferRunning {
+				s.isRunning = false
+				if s.timerCancel != nil {
+					s.timerCancel = nil
+				}
+				s.mu.Unlock()
+				return
+			}
+
+			if s.remainingSeconds > 0 {
+				s.remainingSeconds--
+				s.mu.Unlock()
+			} else {
+				s.isRunning = false
+				if s.timerCancel != nil {
+					s.timerCancel = nil
+				}
+				s.mu.Unlock()
+
+				// Stop spoofer outside of server lock
+				_ = s.spoofer.Stop()
+				return
+			}
 		}
 	}
 }

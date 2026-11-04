@@ -3,6 +3,7 @@ package config
 import (
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 )
 
@@ -54,6 +55,11 @@ func TestResolveDiscordApp(t *testing.T) {
 }
 
 func TestFetchRemoteGames(t *testing.T) {
+	// Isolate cache path to temp directory so tests never pollute real host cache
+	tempCache := filepath.Join(t.TempDir(), "test_games_cache.json")
+	SetCachePathOverride(tempCache)
+	defer SetCachePathOverride("")
+
 	// Mock remote games.json endpoint
 	mockPayload := `[
 		{
@@ -91,3 +97,22 @@ func TestFetchRemoteGames(t *testing.T) {
 	}
 }
 
+func TestSlugify(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"Roblox Player Beta", "roblox_player_beta"},
+		{"Call of Duty: Modern Warfare 4", "call_of_duty_modern_warfare_4"},
+		{"Мир Танков", "мир_танков"},
+		{"---Special__Game---", "special_game"},
+		{"", "game"},
+	}
+
+	for _, c := range cases {
+		actual := slugify(c.input)
+		if actual != c.expected {
+			t.Errorf("slugify(%q) = %q, expected %q", c.input, actual, c.expected)
+		}
+	}
+}

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 )
 
 type GameItem struct {
@@ -23,7 +24,7 @@ type GameItem struct {
 }
 
 const (
-	AppVersion           = "v1.0.2"
+	AppVersion           = "v1.0.3"
 	GitHubRepo           = "veykax/discord-quest-helper"
 	QuestDurationSeconds = 15*60 + 15
 	DefaultPort          = 39482
@@ -31,17 +32,33 @@ const (
 )
 
 var (
-	mu             sync.RWMutex
-	gamesList      []GameItem
-	SupportedGames []GameItem // Backwards compatibility for external callers/tests
-	remoteURL      = RemoteGamesURL
+	mu                sync.RWMutex
+	gamesList         []GameItem
+	SupportedGames    []GameItem // Backwards compatibility for external callers/tests
+	remoteURL         = RemoteGamesURL
+	cachePathOverride string
+	failedResolves    = make(map[string]time.Time)
+	failedResolvesMu  sync.Mutex
 )
 
 func init() {
 	ensureLoaded()
 }
 
+// SetCachePathOverride allows tests or custom environments to isolate the games cache.
+func SetCachePathOverride(path string) {
+	mu.Lock()
+	defer mu.Unlock()
+	cachePathOverride = path
+}
+
 func getLocalCachePath() string {
+	if cachePathOverride != "" {
+		return cachePathOverride
+	}
+	if custom := os.Getenv("DISCORD_GAMES_CACHE"); custom != "" {
+		return custom
+	}
 	home, _ := os.UserHomeDir()
 	switch runtime.GOOS {
 	case "windows":
@@ -204,6 +221,23 @@ func ResolveDiscordApp(appID string, questTitle string) (*GameItem, error) {
 		return nil, fmt.Errorf("invalid app id")
 	}
 
+	// Negative cache check to prevent repeated failing requests
+	failedResolvesMu.Lock()
+	if failTime, ok := failedResolves[appID]; ok {
+		if time.Since(failTime) < 15*time.Minute {
+			failedResolvesMu.Unlock()
+			return nil, fmt.Errorf("app id %s recently failed to resolve (cooldown)", appID)
+		}
+		delete(failedResolves, appID)
+	}
+	failedResolvesMu.Unlock()
+
+	recordFailure := func() {
+		failedResolvesMu.Lock()
+		failedResolves[appID] = time.Now()
+		failedResolvesMu.Unlock()
+	}
+
 	// 1. Check if already known
 	for _, g := range GetGames() {
 		if g.DiscordAppID == appID {
@@ -216,22 +250,26 @@ func ResolveDiscordApp(appID string, questTitle string) (*GameItem, error) {
 	client := &http.Client{Timeout: 3 * time.Second}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
+		recordFailure()
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "DiscordQuestHelper/1.1")
 
 	resp, err := client.Do(req)
 	if err != nil {
+		recordFailure()
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		recordFailure()
 		return nil, fmt.Errorf("discord rpc returned HTTP %d", resp.StatusCode)
 	}
 
 	var rpcResp discordRPCResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		recordFailure()
 		return nil, err
 	}
 
@@ -281,8 +319,13 @@ func ResolveDiscordApp(appID string, questTitle string) (*GameItem, error) {
 		}
 	}
 
+	itemID := slugify(title)
+	if itemID == "game" && appID != "" {
+		itemID = "game_" + appID
+	}
+
 	item := GameItem{
-		ID:           slugify(title),
+		ID:           itemID,
 		Title:        title,
 		ExeName:      exeName,
 		WindowTitle:  title,
@@ -298,7 +341,7 @@ func slugify(s string) string {
 	s = strings.ToLower(s)
 	var b strings.Builder
 	for _, r := range s {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			b.WriteRune(r)
 		} else if r == ' ' || r == '-' || r == '_' {
 			b.WriteRune('_')

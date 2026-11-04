@@ -93,6 +93,7 @@ let isSoundEnabled = localStorage.getItem("dqh_sound") !== "false";
 let detectedQuests = [];
 let matchedQuestsByGameId = {};
 let selectedDurationSeconds = 15 * 60 + 15;
+let audioCtx = null;
 
 const CIRCUMFERENCE = 2 * Math.PI * 82; // 515.22
 
@@ -141,10 +142,32 @@ const updateBtn = document.getElementById("updateBtn");
 const updateBtnText = document.getElementById("updateBtnText");
 let appUpdateInfo = null;
 
+// AudioContext Management (prevents background audio being suspended)
+function getAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    }
+  }
+  return audioCtx;
+}
+
+function unlockAudio() {
+  const ctx = getAudioContext();
+  if (ctx && ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+}
+
 // Init
 async function init() {
   ringFill.style.strokeDasharray = `${CIRCUMFERENCE}`;
   ringFill.style.strokeDashoffset = `${CIRCUMFERENCE}`;
+
+  // Unlock audio context on first user gesture anywhere
+  window.addEventListener("click", unlockAudio, { passive: true });
+  window.addEventListener("keydown", unlockAudio, { passive: true });
 
   applyLanguage(currentLang);
   updateSoundUI();
@@ -228,11 +251,13 @@ const MIN_WINDOW_WIDTH = 840;
 const MIN_WINDOW_HEIGHT = 580;
 
 window.addEventListener("resize", () => {
-  if (window.outerWidth < MIN_WINDOW_WIDTH || window.outerHeight < MIN_WINDOW_HEIGHT) {
-    const targetW = Math.max(window.outerWidth, MIN_WINDOW_WIDTH);
-    const targetH = Math.max(window.outerHeight, MIN_WINDOW_HEIGHT);
-    window.resizeTo(targetW, targetH);
-  }
+  try {
+    if (window.outerWidth < MIN_WINDOW_WIDTH || window.outerHeight < MIN_WINDOW_HEIGHT) {
+      const targetW = Math.max(window.outerWidth, MIN_WINDOW_WIDTH);
+      const targetH = Math.max(window.outerHeight, MIN_WINDOW_HEIGHT);
+      window.resizeTo(targetW, targetH);
+    }
+  } catch (e) {}
 });
 
 function loadCustomGames() {
@@ -322,7 +347,6 @@ async function fetchQuests(silent = false) {
 
     if (needsGamesReload) {
       await fetchGames();
-      return;
     }
 
     sortGamesWithQuests();
@@ -348,6 +372,21 @@ async function fetchQuests(silent = false) {
   }
 }
 
+window.deleteCustomGame = function(gameId, event) {
+  if (event) event.stopPropagation();
+  const saved = loadCustomGames().filter((g) => g.id !== gameId);
+  saveCustomGames(saved);
+  allGames = allGames.filter((g) => g.id !== gameId);
+  if (gamesCountEl) gamesCountEl.textContent = allGames.length;
+  if (selectedGame && selectedGame.id === gameId) {
+    selectedGame = null;
+    if (allGames.length > 0) {
+      selectGame(allGames[0]);
+    }
+  }
+  renderGames(getFilteredGames());
+};
+
 function renderGames(games) {
   if (!gamesListEl) return;
   gamesListEl.innerHTML = "";
@@ -371,12 +410,20 @@ function renderGames(games) {
       }
     }
 
+    let deleteBtnHTML = "";
+    if (game.id && game.id.startsWith("custom_")) {
+      deleteBtnHTML = `<button type="button" class="delete-custom-btn" title="Delete custom process" onclick="deleteCustomGame('${game.id}', event)">&times;</button>`;
+    }
+
     card.innerHTML = `
       <div class="game-info">
         <div class="game-title">${game.title}</div>
         <div class="game-exe">${game.exe}</div>
       </div>
-      ${badgeHTML}
+      <div class="card-actions">
+        ${badgeHTML}
+        ${deleteBtnHTML}
+      </div>
     `;
     card.onclick = () => selectGame(game);
     gamesListEl.appendChild(card);
@@ -392,10 +439,17 @@ function updateActiveGameQuestBadge() {
       selectedGameQuestTag.className = "quest-status-inline in-progress";
       selectedGameQuestTag.textContent = `${formatMinSec(quest.progressSeconds)} / ${formatMinSec(quest.targetSeconds)}`;
     }
+    const bufferSec = 15;
+    const recommended = Math.max(30, quest.remainingSeconds + bufferSec);
     if (selectedGameHint && !isRunning) {
-      const bufferSec = 15;
-      const recommended = Math.max(30, quest.remainingSeconds + bufferSec);
       selectedGameHint.textContent = `• ${t("smartPreFillHint", formatMinSec(recommended))}`;
+    }
+    if (!isRunning) {
+      selectedDurationSeconds = recommended;
+      updateTimerUI(selectedDurationSeconds, selectedDurationSeconds);
+      if (startBtnText) {
+        startBtnText.textContent = t("startBtnRem", formatMinSec(selectedDurationSeconds));
+      }
     }
   } else if (quest && quest.completed && !quest.claimed) {
     if (selectedGameQuestTag) {
@@ -473,6 +527,7 @@ function setupEventListeners() {
     isSoundEnabled = !isSoundEnabled;
     localStorage.setItem("dqh_sound", isSoundEnabled);
     updateSoundUI();
+    unlockAudio();
   });
 
   // Custom game
@@ -505,6 +560,16 @@ function setupEventListeners() {
     showToast(t("toastSavedTitle"), t("toastSavedMsg", cleanExe));
   });
 
+  // Enter key support on custom process inputs
+  const handleCustomKeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      customSelectBtn.click();
+    }
+  };
+  customExeInput.addEventListener("keydown", handleCustomKeydown);
+  customTitleInput.addEventListener("keydown", handleCustomKeydown);
+
   // Hotkey '/' to focus search
   window.addEventListener("keydown", (e) => {
     if (e.key === "/" && document.activeElement !== searchInput && document.activeElement !== customExeInput && document.activeElement !== customTitleInput) {
@@ -514,7 +579,13 @@ function setupEventListeners() {
   });
 
   // Buttons
-  startBtn.addEventListener("click", startGame);
+  startBtn.addEventListener("click", () => {
+    unlockAudio();
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+    startGame();
+  });
   stopBtn.addEventListener("click", stopGame);
 
   // Auto-sync whenever window gains focus (even when running)
@@ -686,7 +757,7 @@ function updateTimerUI(remaining, total) {
 }
 
 function resetTimerUI() {
-  timerDigits.textContent = "15:00";
+  timerDigits.textContent = formatMinSec(selectedDurationSeconds || (15 * 60 + 15));
   ringFill.style.strokeDashoffset = CIRCUMFERENCE;
 }
 
@@ -704,6 +775,16 @@ function onQuestCompleted() {
 
   showToast(t("toastCompleteTitle"), t("toastCompleteMsg"));
 
+  // Desktop Native Notification
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(t("toastCompleteTitle"), {
+        body: t("toastCompleteMsg"),
+        icon: "icon-192.png",
+      });
+    } catch (e) {}
+  }
+
   // Trigger auto refresh of Discord cache after completion
   setTimeout(() => fetchQuests(true), 2500);
 }
@@ -718,9 +799,13 @@ function showToast(title, message) {
 }
 
 // Chime synthesized audio
-function playChime() {
+async function playChime() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
     const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();

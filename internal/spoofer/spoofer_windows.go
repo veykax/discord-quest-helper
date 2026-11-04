@@ -226,19 +226,27 @@ func (m *windowsManager) stopUnlocked() error {
 		m.currentManifest = ""
 	}
 
+	// Remove altExe and its auxiliary files first so parent folder can be cleanly removed
+	if m.altExe != "" {
+		_ = os.Remove(filepath.Join(filepath.Dir(m.altExe), "steam_appid.txt"))
+		_ = os.Remove(m.altExe)
+		altParent := filepath.Dir(m.altExe)
+		if altParent != m.tempDir && !strings.Contains(strings.ToLower(altParent), "steamapps") && altParent != filepath.Dir(m.currentExe) {
+			_ = os.Remove(altParent)
+		}
+		m.altExe = ""
+	}
+
 	if m.currentExe != "" {
+		_ = os.Remove(filepath.Join(filepath.Dir(m.currentExe), "steam_appid.txt"))
 		_ = os.Remove(m.currentExe)
 		parent := filepath.Dir(m.currentExe)
-		_ = os.Remove(filepath.Join(parent, "steam_appid.txt"))
 		if parent != m.tempDir && !strings.Contains(strings.ToLower(parent), "steamapps") {
 			_ = os.Remove(parent)
 		}
 		m.currentExe = ""
 	}
-	if m.altExe != "" {
-		_ = os.Remove(m.altExe)
-		m.altExe = ""
-	}
+
 	m.currentName = ""
 	return nil
 }

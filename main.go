@@ -134,13 +134,16 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 			)
 
 			if err := cmd.Start(); err == nil {
-				// При закрытии окна пользователем - плавно закрываем приложение
+				// При закрытии окна пользователем - плавно закрываем приложение (с защитой от раннего выхода)
 				go func() {
+					startTime := time.Now()
 					_ = cmd.Wait()
-					select {
-					case <-exitChan:
-					default:
-						close(exitChan)
+					if time.Since(startTime) > 3*time.Second {
+						select {
+						case <-exitChan:
+						default:
+							close(exitChan)
+						}
 					}
 				}()
 				return
@@ -168,8 +171,8 @@ func launchNativeAppWindow(url string, exitChan chan struct{}) {
 			}
 		}
 
-		// Fallback: запуск в браузере по умолчанию
-		_ = exec.Command("cmd", "/c", "start", url).Start()
+		// Fallback: запуск в браузере по умолчанию через rundll32 без консольного окна
+		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
 
 	case "linux":
 		ensureLinuxDesktopEntry()
@@ -388,18 +391,25 @@ func ensureLinuxDesktopEntry() {
 		_ = os.WriteFile(filepath.Join(pixmapsDir, "discord-quest-helper.png"), data, 0644)
 	}
 
+	self, err := os.Executable()
+	execLine := "Exec=discord-quest-helper"
+	if err == nil && self != "" {
+		execLine = fmt.Sprintf("Exec=%s", self)
+	}
+
 	appDir := filepath.Join(home, ".local", "share", "applications")
 	_ = os.MkdirAll(appDir, 0755)
 	desktopPath := filepath.Join(appDir, "discord-quest-helper.desktop")
-	desktopContent := `[Desktop Entry]
+	desktopContent := fmt.Sprintf(`[Desktop Entry]
 Type=Application
 Name=Discord Quest Helper
 Comment=Game process emulator for Discord Quest rewards
+%s
 Icon=discord-quest-helper
 StartupWMClass=discord-quest-helper
 Terminal=false
 Categories=Utility;
-`
+`, execLine)
 	_ = os.WriteFile(desktopPath, []byte(desktopContent), 0644)
 
 	// Refresh system cache for KDE Plasma and GNOME
