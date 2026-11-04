@@ -35,6 +35,11 @@ func main() {
 	sp := spoofer.New()
 	exitChan := make(chan struct{})
 
+	// Фоновое обновление базы игр с GitHub
+	go func() {
+		_, _ = config.FetchRemoteGames()
+	}()
+
 	// Корневая поддиректория для встраивания web/
 	webSubFS, err := fs.Sub(embeddedWebFS, "web")
 	if err != nil {

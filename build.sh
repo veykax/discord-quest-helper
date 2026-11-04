@@ -3,6 +3,7 @@ set -e
 
 echo "Building Discord Quest Helper..."
 mkdir -p build
+cp games.json internal/config/default_games.json
 
 GO_CMD="${GO:-go}"
 if ! command -v "$GO_CMD" >/dev/null 2>&1; then

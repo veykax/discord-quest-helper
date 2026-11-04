@@ -47,6 +47,7 @@ type rawDiscordCache struct {
 	Quests []struct {
 		ID     string `json:"id"`
 		Config struct {
+			ExpiresAt   string `json:"expires_at"`
 			Application struct {
 				ID   string `json:"id"`
 				Name string `json:"name"`
@@ -342,10 +343,21 @@ func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
 			continue
 		}
 
+		// Skip expired quests that were not completed
+		if q.Config.ExpiresAt != "" {
+			if expTime, err := time.Parse(time.RFC3339, q.Config.ExpiresAt); err == nil {
+				if expTime.Before(time.Now()) && q.UserStatus.CompletedAt == nil {
+					continue
+				}
+			}
+		}
+
 		target := 900
 		var taskAppIDs []string
+		isDesktopPlay := false
 
 		if t, ok := q.Config.TaskConfigV2.Tasks["PLAY_ON_DESKTOP"]; ok {
+			isDesktopPlay = true
 			if t.Target > 0 {
 				target = t.Target
 			}
@@ -355,6 +367,7 @@ func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
 				}
 			}
 		} else if t, ok := q.Config.TaskConfig.Tasks["PLAY_ON_DESKTOP"]; ok {
+			isDesktopPlay = true
 			if t.Target > 0 {
 				target = t.Target
 			}
@@ -363,6 +376,11 @@ func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
 					taskAppIDs = append(taskAppIDs, app.ID)
 				}
 			}
+		}
+
+		if !isDesktopPlay {
+			// Skip video, mobile, and activity quests — only desktop game quests can be spoofed
+			continue
 		}
 
 		progress := 0
@@ -404,6 +422,19 @@ func ReadQuests(supportedGames []config.GameItem) QuestsResponse {
 
 		// Match quest to supported game
 		qs.MatchedGameID = matchGameID(qs, taskAppIDs, supportedGames)
+		if qs.MatchedGameID == "" {
+			// Auto-resolver for desktop play quests
+			candidateAppIDs := append([]string(nil), taskAppIDs...)
+			if qs.AppID != "" && qs.AppID != "545364944258990091" {
+				candidateAppIDs = append(candidateAppIDs, qs.AppID)
+			}
+			for _, tid := range candidateAppIDs {
+				if item, err := config.ResolveDiscordApp(tid, qs.GameTitle); err == nil && item != nil {
+					qs.MatchedGameID = item.ID
+					break
+				}
+			}
+		}
 		result = append(result, qs)
 	}
 

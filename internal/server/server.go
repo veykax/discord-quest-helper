@@ -57,11 +57,11 @@ func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 
 func (s *AppServer) handleGames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(config.SupportedGames)
+	json.NewEncoder(w).Encode(config.GetGames())
 }
 
 func (s *AppServer) handleQuests(w http.ResponseWriter, r *http.Request) {
-	resp := quests.ReadQuests(config.SupportedGames)
+	resp := quests.ReadQuests(config.GetGames())
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

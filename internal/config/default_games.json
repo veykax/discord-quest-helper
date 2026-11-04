@@ -1,0 +1,70 @@
+[
+  {
+    "id": "roblox",
+    "title": "Roblox",
+    "exe": "RobloxPlayerBeta.exe",
+    "windowTitle": "Roblox",
+    "discordAppId": "363445589247131668"
+  },
+  {
+    "id": "maplestory_cw",
+    "title": "MapleStory Classic World",
+    "exe": "mscw/maplestory.exe",
+    "windowTitle": "MapleStory Classic World",
+    "discordAppId": "1565580212664795249"
+  },
+  {
+    "id": "cod_mw4",
+    "title": "Call of Duty: Modern Warfare 4",
+    "exe": "cod26-cod.exe",
+    "windowTitle": "Call of Duty: Modern Warfare 4",
+    "discordAppId": "1511443377927880775"
+  },
+  {
+    "id": "re_sale",
+    "title": "Resident Evil Sale",
+    "exe": "re7.exe",
+    "windowTitle": "RESIDENT EVIL 7 biohazard",
+    "discordAppId": "443160369192632330"
+  },
+  {
+    "id": "once_human",
+    "title": "Once Human",
+    "exe": "once human/once_human.exe",
+    "windowTitle": "Once Human",
+    "steamFolder": "Once Human",
+    "steamAppId": "2139460",
+    "discordAppId": "1260340082150346932"
+  },
+  {
+    "id": "where_winds_meet",
+    "title": "Where Winds Meet",
+    "exe": "wwm.exe",
+    "windowTitle": "Where Winds Meet",
+    "steamAppId": "3564740",
+    "discordAppId": "1437509662303059998"
+  },
+  {
+    "id": "endfield",
+    "title": "Arknights: Endfield",
+    "exe": "endfield.exe",
+    "windowTitle": "ARKNIGHTS: ENDFIELD",
+    "steamAppId": "4732690",
+    "discordAppId": "1461154307171811401"
+  },
+  {
+    "id": "firefox",
+    "title": "Firefox Browser",
+    "exe": "firefox.exe",
+    "windowTitle": "Mozilla Firefox",
+    "discordAppId": "1442729602559643668"
+  },
+  {
+    "id": "valorant",
+    "title": "VALORANT",
+    "exe": "win64/VALORANT-Win64-Shipping.exe",
+    "windowTitle": "VALORANT",
+    "discordAppId": "700136079562375258"
+  }
+]
+

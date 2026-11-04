@@ -278,10 +278,22 @@ async function fetchQuests(silent = false) {
     detectedQuests = data.quests || [];
     matchedQuestsByGameId = {};
 
+    let needsGamesReload = false;
     for (const q of detectedQuests) {
       if (q.matchedGameId) {
-        matchedQuestsByGameId[q.matchedGameId] = q;
+        const existing = matchedQuestsByGameId[q.matchedGameId];
+        if (!existing || (q.enrolled && !q.completed) || (existing.claimed && !q.claimed)) {
+          matchedQuestsByGameId[q.matchedGameId] = q;
+        }
+        if (!allGames.some((g) => g.id === q.matchedGameId)) {
+          needsGamesReload = true;
+        }
       }
+    }
+
+    if (needsGamesReload) {
+      await fetchGames();
+      return;
     }
 
     sortGamesWithQuests();
