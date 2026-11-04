@@ -23,7 +23,7 @@ type GameItem struct {
 }
 
 const (
-	AppVersion           = "v1.0.0"
+	AppVersion           = "v1.0.2"
 	GitHubRepo           = "veykax/discord-quest-helper"
 	QuestDurationSeconds = 15*60 + 15
 	DefaultPort          = 39482
