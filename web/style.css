@@ -113,34 +113,26 @@ html, body {
   border-color: var(--accent);
 }
 
-.update-pill {
-  background: rgba(35, 165, 90, 0.15);
-  border: 1px solid rgba(35, 165, 90, 0.45);
+.update-btn {
+  background: rgba(35, 165, 90, 0.12);
+  border: 1px solid rgba(35, 165, 90, 0.35);
   color: #57f287;
   height: 30px;
   padding: 0 10px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  text-decoration: none;
+  gap: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
-  animation: pulse-update-border 2.5s infinite;
 }
 
-.update-pill:hover {
-  background: rgba(35, 165, 90, 0.28);
-  border-color: #23a55a;
+.update-btn:hover {
+  background: rgba(35, 165, 90, 0.22);
   color: #ffffff;
-  transform: translateY(-1px);
-}
-
-@keyframes pulse-update-border {
-  0%, 100% { border-color: rgba(35, 165, 90, 0.45); }
-  50% { border-color: rgba(35, 165, 90, 0.9); box-shadow: 0 0 8px rgba(35, 165, 90, 0.3); }
+  border-color: #23a55a;
 }
 
 .lang-btn {

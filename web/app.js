@@ -137,8 +137,8 @@ const toastCloseBtn = document.getElementById("toastCloseBtn");
 const toastTitle = document.getElementById("toastTitle");
 const toastMsg = document.getElementById("toastMsg");
 
-const updatePill = document.getElementById("updatePill");
-const updatePillText = document.getElementById("updatePillText");
+const updateBtn = document.getElementById("updateBtn");
+const updateBtnText = document.getElementById("updateBtnText");
 let appUpdateInfo = null;
 
 // Init
@@ -190,17 +190,16 @@ function applyLanguage(lang) {
     updateActiveGameQuestBadge();
   }
 
-  renderUpdatePill();
+  renderUpdateBtn();
 }
 
-function renderUpdatePill() {
-  if (!updatePill || !updatePillText || !appUpdateInfo) return;
+function renderUpdateBtn() {
+  if (!updateBtn || !updateBtnText || !appUpdateInfo) return;
   if (appUpdateInfo.hasUpdate) {
-    updatePill.href = appUpdateInfo.releaseUrl;
-    updatePillText.textContent = t("updateAvailable", appUpdateInfo.latestVersion);
-    updatePill.classList.remove("hidden");
+    updateBtnText.textContent = t("updateAvailable", appUpdateInfo.latestVersion);
+    updateBtn.classList.remove("hidden");
   } else {
-    updatePill.classList.add("hidden");
+    updateBtn.classList.add("hidden");
   }
 }
 
@@ -208,7 +207,7 @@ async function checkAppUpdate() {
   try {
     const res = await fetch("/api/update");
     appUpdateInfo = await res.json();
-    renderUpdatePill();
+    renderUpdateBtn();
   } catch (err) {
     // Non-critical background check
   }
@@ -540,6 +539,17 @@ function setupEventListeners() {
   };
 
   if (openDiscordHeaderBtn) openDiscordHeaderBtn.addEventListener("click", openDiscord);
+
+  // Open GitHub release in system default browser
+  if (updateBtn) {
+    updateBtn.addEventListener("click", async () => {
+      try {
+        await fetch("/api/open-release", { method: "POST" });
+      } catch (err) {
+        console.error("Open release error:", err);
+      }
+    });
+  }
 }
 
 async function startGame() {

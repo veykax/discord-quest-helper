@@ -46,6 +46,7 @@ func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/stop", s.handleStop)
 	mux.HandleFunc("/api/exit", s.handleExit)
 	mux.HandleFunc("/api/open-discord", s.handleOpenDiscord)
+	mux.HandleFunc("/api/open-release", s.handleOpenRelease)
 	mux.HandleFunc("/api/update", s.handleUpdate)
 
 	fileServer := http.FileServer(http.FS(s.webFS))
@@ -227,6 +228,39 @@ func (s *AppServer) handleOpenDiscord(w http.ResponseWriter, r *http.Request) {
 	case "darwin":
 		_ = exec.Command("open", uri).Start()
 	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
+func openBrowserURL(targetURL string) {
+	switch runtime.GOOS {
+	case "windows":
+		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start()
+	case "linux":
+		if _, err := exec.LookPath("gio"); err == nil {
+			if err := exec.Command("gio", "open", targetURL).Start(); err == nil {
+				return
+			}
+		}
+		_ = exec.Command("xdg-open", targetURL).Start()
+	case "darwin":
+		_ = exec.Command("open", targetURL).Start()
+	}
+}
+
+func (s *AppServer) handleOpenRelease(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	info := updater.CheckUpdate()
+	url := info.ReleaseURL
+	if url == "" {
+		url = "https://github.com/" + config.GitHubRepo + "/releases/latest"
+	}
+	openBrowserURL(url)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
