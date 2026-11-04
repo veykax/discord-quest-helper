@@ -14,6 +14,7 @@ import (
 	"discord-quest-helper/internal/config"
 	"discord-quest-helper/internal/quests"
 	"discord-quest-helper/internal/spoofer"
+	"discord-quest-helper/internal/updater"
 )
 
 type AppServer struct {
@@ -45,6 +46,7 @@ func (s *AppServer) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/stop", s.handleStop)
 	mux.HandleFunc("/api/exit", s.handleExit)
 	mux.HandleFunc("/api/open-discord", s.handleOpenDiscord)
+	mux.HandleFunc("/api/update", s.handleUpdate)
 
 	fileServer := http.FileServer(http.FS(s.webFS))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -228,6 +230,12 @@ func (s *AppServer) handleOpenDiscord(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
+func (s *AppServer) handleUpdate(w http.ResponseWriter, r *http.Request) {
+	info := updater.CheckUpdate()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(info)
 }
 
 func (s *AppServer) runTimer() {

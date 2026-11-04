@@ -115,4 +115,13 @@ func TestServerRoutes(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200 on /api/quests, got %d", rec.Code)
 	}
+
+	// 6. GET /api/update
+	req = httptest.NewRequest(http.MethodGet, "/api/update", nil)
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 on /api/update, got %d", rec.Code)
+	}
 }

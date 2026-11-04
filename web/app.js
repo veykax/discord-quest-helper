@@ -34,6 +34,7 @@ const i18n = {
     toastConnErrTitle: "Connection Error",
     toastConnErrMsg: "Failed to communicate with service: ",
     soundTitle: "Completion sound",
+    updateAvailable: (v) => `${v} Update`,
   },
   ru: {
     langCode: "RU",
@@ -69,6 +70,7 @@ const i18n = {
     toastConnErrTitle: "Ошибка связи",
     toastConnErrMsg: "Не удалось связаться с сервисом: ",
     soundTitle: "Звук по завершению",
+    updateAvailable: (v) => `Доступно ${v}`,
   }
 };
 
@@ -135,6 +137,10 @@ const toastCloseBtn = document.getElementById("toastCloseBtn");
 const toastTitle = document.getElementById("toastTitle");
 const toastMsg = document.getElementById("toastMsg");
 
+const updatePill = document.getElementById("updatePill");
+const updatePillText = document.getElementById("updatePillText");
+let appUpdateInfo = null;
+
 // Init
 async function init() {
   ringFill.style.strokeDasharray = `${CIRCUMFERENCE}`;
@@ -146,6 +152,7 @@ async function init() {
   await fetchQuests(true);
   setupEventListeners();
   checkInitialStatus();
+  checkAppUpdate();
 }
 
 function applyLanguage(lang) {
@@ -181,6 +188,29 @@ function applyLanguage(lang) {
   if (allGames.length > 0) {
     renderGames(getFilteredGames());
     updateActiveGameQuestBadge();
+  }
+
+  renderUpdatePill();
+}
+
+function renderUpdatePill() {
+  if (!updatePill || !updatePillText || !appUpdateInfo) return;
+  if (appUpdateInfo.hasUpdate) {
+    updatePill.href = appUpdateInfo.releaseUrl;
+    updatePillText.textContent = t("updateAvailable", appUpdateInfo.latestVersion);
+    updatePill.classList.remove("hidden");
+  } else {
+    updatePill.classList.add("hidden");
+  }
+}
+
+async function checkAppUpdate() {
+  try {
+    const res = await fetch("/api/update");
+    appUpdateInfo = await res.json();
+    renderUpdatePill();
+  } catch (err) {
+    // Non-critical background check
   }
 }
 

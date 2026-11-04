@@ -46,13 +46,15 @@
 
 ## Features
 
+- **Universal & Future-Proof (Zero-Touch):** Automatically supports **all current and future Discord Quests**. When you accept any quest in Discord, the app reads the quest signature, resolves its executable and Steam App ID on the fly, and configures emulation without waiting for app updates.
 - **Auto-Detection of Active Quests:** Automatically reads active quests and real-time progress directly from Discord's local disk cache. 100% offline, zero network requests, zero token or account risk.
+- **Over-The-Air Game Database:** Instant cloud sync (`games.json`) for verified game paths and special launch parameters without downloading new binaries.
 - **Auto-Sorting by Quest Status:** Games with active quests are highlighted and automatically prioritized to the top of your list.
-- **Zero External Dependencies:** Compiles into a single standalone executable (~7 MB). Does not require Go, Python, Node.js, Electron, or browser extensions.
+- **Zero External Dependencies:** Compiles into a single standalone executable (~7.8 MB). Does not require Go, Python, Node.js, Electron, or browser extensions.
 - **Cross-Platform Support:** Fully functional on **Windows** (10/11) and **Linux** (Flatpak & Native Discord installations).
 - **Native Standalone Window:** Runs in an isolated, border-clean application window centered on your display with minimum size protection.
 - **Process Lifecycle Sync:** Closing the simulation window from your taskbar automatically halts the quest timer.
-- **Steam & Subpath Verification:** Supports relative directory paths (e.g., `win64/` for VALORANT, `once human/` for Once Human) and Steam library manifests (`appmanifest_*.acf` + `steam_appid.txt`).
+- **Steam & Subpath Verification:** Supports relative directory paths (e.g., `win64/` for VALORANT, `mscw/` for MapleStory) and Steam library manifests (`appmanifest_*.acf` + `steam_appid.txt`).
 - **Custom Game Support:** Add any custom `.exe` for future quests; entries persist locally across restarts.
 - **Audio & Toast Alerts:** Built-in chime sound and dark-mode toast alerts notify you when the quest timer completes.
 - **Bilingual Interface:** Instant EN/RU language switcher with persistent user preference.
@@ -61,18 +63,20 @@
 
 ## Supported Games
 
-Includes verified quest signatures for popular titles:
+Discord Quest Helper supports **all desktop Discord Quests** out of the box:
 
-- **Roblox** (`RobloxPlayerBeta.exe`)
-- **MapleStory Classic World** (`mscw/maplestory.exe`)
-- **Once Human** (`once human/once_human.exe`)
-- **Call of Duty: Modern Warfare** (`cod26-cod.exe`)
-- **Resident Evil 7 biohazard** (`re7.exe`)
-- **Where Winds Meet** (`wwm.exe`)
-- **Arknights: Endfield** (`endfield.exe`)
-- **Firefox Browser** (`firefox.exe`)
-- **VALORANT** (`win64/VALORANT-Win64-Shipping.exe`)
-- **Custom Executables** (input any `.exe` and window title)
+- **Any Active Desktop Quest (Auto-Discovery):** As soon as you accept any quest in Discord, the app automatically extracts the application ID, queries Discord's RPC registry for the exact executable name, and adds it to your active list.
+- **Pre-Verified Cloud Registry (`games.json`):** Tested and pre-configured signatures for popular titles:
+  - **MapleStory Classic World** (`mscw/maplestory.exe`)
+  - **Roblox** (`RobloxPlayerBeta.exe`)
+  - **Once Human** (`once human/once_human.exe` + Steam AppID `2139460`)
+  - **Call of Duty: Modern Warfare 4** (`cod26-cod.exe`)
+  - **VALORANT** (`win64/VALORANT-Win64-Shipping.exe`)
+  - **Arknights: Endfield** (`endfield.exe`)
+  - **Where Winds Meet** (`wwm.exe` + Steam AppID `3564740`)
+  - **Resident Evil 7 biohazard** (`re7.exe`)
+  - **Firefox Browser** (`firefox.exe`)
+- **Custom Executables:** Input any custom `.exe` and window title directly in the interface.
 
 ---
 

@@ -23,6 +23,8 @@ type GameItem struct {
 }
 
 const (
+	AppVersion           = "v1.1.0"
+	GitHubRepo           = "veykax/discord-quest-helper"
 	QuestDurationSeconds = 15*60 + 15
 	DefaultPort          = 39482
 	RemoteGamesURL       = "https://raw.githubusercontent.com/veykax/discord-quest-helper/main/games.json"
